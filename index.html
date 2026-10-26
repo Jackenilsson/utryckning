@@ -384,8 +384,11 @@ const CORE = (function () {
             if (len > 0.5) {
               const e = { id: edges.length, a, b, pts, len, name: r.name, cls: r.cls, ow: r.ow, t: len / (SPEED[r.cls] / 3.6) };
               edges.push(e);
-              if (r.ow !== -1) nodes[a].out.push({ e: e.id, fwd: true, to: b });
-              if (r.ow !== 1) nodes[b].out.push({ e: e.id, fwd: false, to: a });
+              // Gårdsvägar (bensinmackar, parkeringar, innergårdar) ritas men går inte att köra in på
+              if (r.cls !== 8) {
+                if (r.ow !== -1) nodes[a].out.push({ e: e.id, fwd: true, to: b });
+                if (r.ow !== 1) nodes[b].out.push({ e: e.id, fwd: false, to: a });
+              }
             }
           }
           start = i;
@@ -2035,7 +2038,9 @@ function placeChoices() {
   const btns = [...document.querySelectorAll('#choices .choice')];
   const [cx, cy] = w2s(state.car.x, state.car.y);
   const R = Math.min(110, Math.max(80, Math.min(W, H) * 0.2));
-  let angs = state.exits.map(s => CORE.stepHeading(G, s, 30) + view.rot);
+  // Pilen pekar mot där vägen faktiskt går på skärmen, inte bara åt vilket håll den börjar
+  const along = (s) => { const pts = CORE.stepPts(G, s); let last = null; for (const p of pts) { const [px, py] = w2s(p[0], p[1]); const d = Math.hypot(px - cx, py - cy); if (d > 6) last = [px, py]; if (d >= R * 0.8) break; } return last ? Math.atan2(last[1] - cy, last[0] - cx) : CORE.stepHeading(G, s, 30) + view.rot; };
+  let angs = state.exits.map(along);
   // sprid ut knappar som ligger för nära varandra
   const idx = angs.map((a, i) => i).sort((i, j) => angs[i] - angs[j]);
   for (let k = 0; k < 3; k++) for (let m = 0; m < idx.length; m++) { const i = idx[m], j = idx[(m + 1) % idx.length]; if (i === j) continue; let d = angs[j] - angs[i]; while (d < 0) d += Math.PI * 2; if (d < 0.6 && idx.length > 1) { const push = (0.6 - d) / 2; angs[i] -= push; angs[j] += push; } }
