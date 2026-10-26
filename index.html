@@ -431,40 +431,74 @@ const CORE = (function () {
       }
     }
     // Förberäkna tid från stationen
+    G.ban = computeBans(G);
     G.fromStation = dijkstra(G, station).dist;
     return G;
   }
 
-  // Dijkstra på riktad graf. Returnerar dist + föregångare (kant-steg)
-  function dijkstra(G, src) {
-    const N = G.nodes.length; const dist = new Float64Array(N).fill(Infinity); const prev = new Array(N).fill(null);
-    dist[src] = 0; const heap = [[0, src]];
+  // Svängar som inte går i verkligheten: nästan helt bakåt (> 150°), eller skarpt (> 115°) in på
+  // en enkelriktad vägbit, t.ex. en avfart som är till för trafiken från andra hållet.
+  const sk = (s) => s.e * 2 + (s.fwd ? 1 : 0);
+  function turnDeg(G, inStep, outStep) {
+    const inH = stepHeading(G, { e: inStep.e, fwd: !inStep.fwd }, 25) + Math.PI;
+    let d = stepHeading(G, outStep, 25) - inH; return Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) * 180 / Math.PI;
+  }
+  function computeBans(G) {
+    const ban = new Set(); const inc = G.nodes.map(() => []);
+    G.nodes.forEach(n => n.out.forEach(s => inc[s.to].push(s)));
+    G.nodes.forEach((n, v) => {
+      for (const a of inc[v]) {
+        const outs = n.out.filter(s => s.e !== a.e); const bad = [];
+        for (const s of outs) { const d = turnDeg(G, a, s); if (d > 150 || (d > 115 && G.edges[s.e].ow)) bad.push(s); }
+        if (bad.length && bad.length < outs.length) for (const s of bad) ban.add(sk(a) * 1e6 + sk(s));
+      }
+    });
+    return ban;
+  }
+  const banned = (G, a, s) => !!(G.ban && a && G.ban.has(sk(a) * 1e6 + sk(s)));
+  // Steget man kom in till noden med (kant + riktning), eller null
+  function arrivalStep(G, node, cameEdge) {
+    if (cameEdge == null || cameEdge < 0) return null; const e = G.edges[cameEdge]; if (!e || e.a === e.b) return null;
+    return e.b === node ? { e: cameEdge, fwd: true, to: node } : e.a === node ? { e: cameEdge, fwd: false, to: node } : null;
+  }
+
+  // Dijkstra på kantsteg (så att förbjudna svängar räknas med). dist/prev per nod, sd/sp per steg.
+  function dijkstra(G, src, cameEdge) {
+    const N = G.nodes.length, M = G.edges.length * 2;
+    const dist = new Float64Array(N).fill(Infinity); const prev = new Array(N).fill(null);
+    const sd = new Float64Array(M).fill(Infinity); const sp = new Int32Array(M).fill(-1); const stepOf = new Array(M);
+    dist[src] = 0; const heap = [];
     const push = (it) => { heap.push(it); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
     const pop = () => { const top = heap[0]; const last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+    const relax = (s, d, from) => { const k = sk(s); const nd = d + G.edges[s.e].t; if (nd < sd[k]) { sd[k] = nd; sp[k] = from; stepOf[k] = s; push([nd, k]); } };
+    for (const s of exitsFrom(G, src, cameEdge)) relax(s, 0, -1);
     while (heap.length) {
-      const [d, u] = pop(); if (d > dist[u]) continue;
-      for (const s of G.nodes[u].out) { const nd = d + G.edges[s.e].t; if (nd < dist[s.to]) { dist[s.to] = nd; prev[s.to] = s; push([nd, s.to]); } }
+      const [d, k] = pop(); if (d > sd[k]) continue; const a = stepOf[k]; const v = a.to;
+      if (d < dist[v]) { dist[v] = d; prev[v] = a; }
+      const outs = G.nodes[v].out; const fw = outs.filter(s => s.e !== a.e && !banned(G, a, s));
+      for (const s of (fw.length ? fw : outs)) relax(s, d, k);
     }
-    return { dist, prev };
+    return { dist, prev, sd, sp, stepOf };
   }
 
   // Snabbaste väg från src till närmaste nod som hör till gatan
   // Snabbaste väg från src tills bilen kört in en bit (ENTER m) på någon av målgatans vägbitar.
   // Det räcker alltså inte att nå en korsning där gatan börjar.
   const ENTER = 60;
-  function fastestTo(G, src, streetName) {
-    const { dist, prev } = dijkstra(G, src);
+  function fastestTo(G, src, streetName, cameEdge) {
+    const D = dijkstra(G, src, cameEdge);
     const st = G.streets.get(streetName); if (!st) return null; const tgt = new Set(st.edges);
-    let bd = Infinity, bestU = -1, bestS = null;
-    for (const id of st.edges) { const e = G.edges[id];
-      for (const u of [e.a, e.b]) { if (!isFinite(dist[u])) continue;
-        for (const s of G.nodes[u].out) { if (s.e !== id) continue; const c = dist[u] + e.t * Math.min(1, ENTER / Math.max(1, e.len)); if (c < bd) { bd = c; bestU = u; bestS = s; } } } }
-    if (bestU < 0) return null;
-    const steps = []; let cur = bestU;
-    while (cur !== src) { const p = prev[cur]; steps.push(p); const e = G.edges[p.e]; cur = p.fwd ? e.a : e.b; }
+    let bd = Infinity, bestS = null, bestFrom = -2;
+    const part = (s) => G.edges[s.e].t * Math.min(1, ENTER / Math.max(1, G.edges[s.e].len));
+    for (const s of exitsFrom(G, src, cameEdge)) if (tgt.has(s.e)) { const c = part(s); if (c < bd) { bd = c; bestS = s; bestFrom = -1; } }
+    for (let k = 0; k < D.sd.length; k++) { if (!isFinite(D.sd[k])) continue; const a = D.stepOf[k]; const outs = G.nodes[a.to].out; const fw = outs.filter(s => s.e !== a.e && !banned(G, a, s));
+      for (const s of (fw.length ? fw : outs)) if (tgt.has(s.e) && s.e !== a.e) { const c = D.sd[k] + part(s); if (c < bd) { bd = c; bestS = s; bestFrom = k; } } }
+    if (!bestS) return null;
+    const steps = []; for (let k = bestFrom; k >= 0; k = D.sp[k]) steps.push(D.stepOf[k]);
     steps.reverse(); steps.push(bestS);
     return { time: bd, steps, end: bestS.to, len: steps.reduce((s, p) => s + G.edges[p.e].len, 0) };
   }
+
 
 
   // Gatulista ur en följd av kantsteg: slå ihop samma gata, ta bort korta snuttar
@@ -487,7 +521,8 @@ const CORE = (function () {
 
   // Vilka utfarter finns från en nod (riktade), exkl. den kant vi kom ifrån
   function exitsFrom(G, node, cameEdge) {
-    return G.nodes[node].out.filter(s => s.e !== cameEdge);
+    const outs = G.nodes[node].out.filter(s => s.e !== cameEdge); const a = arrivalStep(G, node, cameEdge);
+    const ok = a ? outs.filter(s => !banned(G, a, s)) : outs; return ok.length ? ok : outs;
   }
 
   // Riktning (radianer, skärmkoordinater) för första ~25 m av ett kantsteg
@@ -508,7 +543,7 @@ const CORE = (function () {
   }
   function segDist(x, y, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1]; const L = dx * dx + dy * dy; let t = L ? ((x - a[0]) * dx + (y - a[1]) * dy) / L : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(x - a[0] - t * dx, y - a[1] - t * dy); }
 
-  return { ENTER, build, dijkstra, fastestTo, streetList, exitsFrom, stepHeading, stepPts, distToStreet, SPEED, CLS_NAME };
+  return { ENTER, turnDeg, build, dijkstra, fastestTo, streetList, exitsFrom, stepHeading, stepPts, distToStreet, SPEED, CLS_NAME };
 })();
 if (typeof module !== 'undefined') module.exports = CORE;
 
@@ -1974,7 +2009,7 @@ function startDrive() {
 function atNode() {
   const nd = state.node;
   if (state.gaveUp) {
-    const r = CORE.fastestTo(G, nd, state.target);
+    const r = CORE.fastestTo(G, nd, state.target, state.came);
     if (r && r.steps.length) { state.autoPath = goalPath(r.steps); return go(r.steps[0]); }
     state.noRoute = true; return arrive();
   }
@@ -2021,7 +2056,7 @@ function renderChoices() {
   if (!state.choosing) return;
   const showName = level() <= 2;
   let bestIdx = -1;
-  if (state.showNext) { const r = CORE.fastestTo(G, state.node, state.target); const f = r && r.steps[0]; if (f) bestIdx = state.exits.findIndex(x => x.e === f.e && x.fwd === f.fwd); }
+  if (state.showNext) { const r = CORE.fastestTo(G, state.node, state.target, state.came); const f = r && r.steps[0]; if (f) bestIdx = state.exits.findIndex(x => x.e === f.e && x.fwd === f.fwd); }
   $('#uturn').classList.toggle('bestTurn', !!state.showNext && bestIdx < 0 && state.steps.length > 0);
   state.exits.forEach((s, i) => {
     const e = G.edges[s.e]; const b = document.createElement('button'); b.className = 'choice' + (i === bestIdx ? ' best' : ''); b.type = 'button';
