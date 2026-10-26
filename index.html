@@ -88,6 +88,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .choice{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;padding:0}
 .choice .disc{width:52px;height:52px;border-radius:50%;background:var(--red);color:var(--redInk);display:grid;place-items:center;box-shadow:0 3px 10px rgba(0,0,0,.35);border:3px solid var(--sheet)}
 .choice .disc svg{width:26px;height:26px}
+.choice .disc .rno{font:800 22px var(--fDisplay),system-ui;line-height:1}
 .choice .lbl{font-family:var(--fDisplay);font-weight:700;font-size:15px;background:var(--sheet);color:var(--ink);padding:2px 7px;border-radius:6px;border:1px solid var(--line);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .choice:hover .disc,.choice:focus-visible .disc{background:var(--ink);color:var(--sheet)}
 
@@ -432,6 +433,7 @@ const CORE = (function () {
     }
     // Förberäkna tid från stationen
     G.ban = computeBans(G);
+    findRings(G);
     G.fromStation = dijkstra(G, station).dist;
     return G;
   }
@@ -460,6 +462,32 @@ const CORE = (function () {
   function arrivalStep(G, node, cameEdge) {
     if (cameEdge == null || cameEdge < 0) return null; const e = G.edges[cameEdge]; if (!e || e.a === e.b) return null;
     return e.b === node ? { e: cameEdge, fwd: true, to: node } : e.a === node ? { e: cameEdge, fwd: false, to: node } : null;
+  }
+
+  // Rondeller: små runda slingor av enkelriktade vägbitar
+  function findRings(G) {
+    const ow = (v) => G.nodes[v].out.filter(s => G.edges[s.e].ow);
+    const cyc = new Map();
+    for (let v = 0; v < G.nodes.length; v++) for (const s0 of ow(v)) {
+      const stack = [[s0, [s0], G.edges[s0.e].len]];
+      while (stack.length) { const [s, path, L] = stack.pop();
+        if (s.to === v) { if (path.length >= 3) { const key = path.map(p => p.e).sort((a, b) => a - b).join(','); if (!cyc.has(key)) cyc.set(key, { path, len: L }); } continue; }
+        if (path.length >= 14) continue;
+        for (const t of ow(s.to)) { if (t.e === s.e || path.some(p => p.e === t.e)) continue; const L2 = L + G.edges[t.e].len; if (L2 <= 300) stack.push([t, path.concat([t]), L2]); } }
+    }
+    const used = new Set(); const rings = []; const nodeRing = new Map(); const ringEdge = new Set();
+    for (const c of [...cyc.values()].sort((a, b) => a.len - b.len)) {
+      if (c.path.some(p => used.has(p.e))) continue; c.path.forEach(p => used.add(p.e));
+      const poly = []; for (const st of c.path) { const pts = stepPts(G, st); poly.push(...(poly.length ? pts.slice(1) : pts)); }
+      let cx = 0, cy = 0; poly.forEach(q => { cx += q[0]; cy += q[1]; }); cx /= poly.length; cy /= poly.length;
+      const ds = poly.map(q => Math.hypot(q[0] - cx, q[1] - cy)); const m = ds.reduce((a, b) => a + b) / ds.length;
+      const cv = Math.sqrt(ds.reduce((a, b) => a + (b - m) ** 2, 0) / ds.length) / m;
+      let maxTurn = 0; for (let i = 1; i < poly.length - 1; i++) { if (Math.hypot(poly[i + 1][0] - poly[i][0], poly[i + 1][1] - poly[i][1]) <= 1.5) continue; const a = Math.atan2(poly[i][1] - poly[i - 1][1], poly[i][0] - poly[i - 1][0]), b = Math.atan2(poly[i + 1][1] - poly[i][1], poly[i + 1][0] - poly[i][0]); maxTurn = Math.max(maxTurn, Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a))) * 180 / Math.PI); }
+      if (cv > 0.25 || maxTurn > 95 || m < 4 || m > 40 || c.len > 200) continue;
+      const id = rings.length; rings.push({ steps: c.path, cx, cy, r: m });
+      for (const st of c.path) { ringEdge.add(st.e); nodeRing.set(st.to, id); }
+    }
+    G.rings = rings; G.nodeRing = nodeRing; G.ringEdge = ringEdge;
   }
 
   // Dijkstra på kantsteg (så att förbjudna svängar räknas med). dist/prev per nod, sd/sp per steg.
@@ -1993,7 +2021,7 @@ function startDrive() {
   state.mode = 'drive'; state.marks = []; state.labels = level() === 1;
   // Har man pekat ut gatan först får målet inte lysa under körningen (det avslöjar var gatan är)
   state.showTarget = level() === 1 && !state.usedLocate; state.targetColor = C.red;
-  state.node = G.station; state.came = -1; state.steps = []; state.autoRun = 0; state.stopNext = false; state.noRoute = false; state.simTime = 0; state.penalty = 0; state.uturns = 0;
+  state.node = G.station; state.came = -1; state.queue = null; state.steps = []; state.autoRun = 0; state.stopNext = false; state.noRoute = false; state.simTime = 0; state.penalty = 0; state.uturns = 0;
   const n = G.nodes[G.station]; const ex = CORE.exitsFrom(G, G.station, -1);
   state.car = { x: n.x, y: n.y, h: ex.length ? CORE.stepHeading(G, ex[0]) : 0 };
   state.limit = level() === 4 ? state.opt.time * 1.6 + 20 : Infinity;
@@ -2009,9 +2037,18 @@ function startDrive() {
 function atNode() {
   const nd = state.node;
   if (state.gaveUp) {
-    const r = CORE.fastestTo(G, nd, state.target, state.came);
+    state.queue = null; const r = CORE.fastestTo(G, nd, state.target, state.came);
     if (r && r.steps.length) { state.autoPath = goalPath(r.steps); return go(r.steps[0]); }
     state.noRoute = true; return arrive();
+  }
+  if (state.queue && state.queue.length) return go(state.queue.shift());
+  const ringOpts = ringOptions(nd, state.came);
+  if (ringOpts) {
+    $('#stopBtn').hidden = true; state.autoRun = 0;
+    if (ringOpts.length === 1 && state.steps.length > 0) { state.queue = ringOpts[0].path.slice(1); return go(ringOpts[0].path[0]); }
+    state.exits = ringOpts; state.choosing = true;
+    setHint('Rondell · välj avfart<small>' + (level() >= 3 ? 'Räknat från där du kör in' : 'Tryck på avfarten du vill ta') + '</small>');
+    renderChoices(); requestDraw(); return;
   }
   const exits = CORE.exitsFrom(G, nd, state.came);
   if (exits.length === 1 && state.steps.length > 0) { if (++state.forced > 60) { state.exits = exits; state.choosing = true; state.forced = 0; setHint('Välj väg<small>Tryck på pilen</small>'); renderChoices(); requestDraw(); return; } return go(exits[0]); }
@@ -2023,6 +2060,21 @@ function atNode() {
   state.exits = exits; state.choosing = true;
   setHint(exits.length ? 'Välj väg<small>' + (level() >= 3 ? 'Inga gatunamn på den här nivån' : 'Tryck på en pil') + '</small>' : 'Återvändsgränd<small>Tryck Vänd</small>');
   renderChoices(); requestDraw();
+}
+// Rondell: alla avfarter direkt vid infarten. Varje val = vägen runt rondellen + avfarten.
+function ringOptions(nd, came) {
+  if (!G.nodeRing || !G.nodeRing.has(nd) || G.ringEdge.has(came)) return null;
+  const isR = (s) => G.ringEdge.has(s.e);
+  const first = CORE.exitsFrom(G, nd, came); let step = first.find(isR); if (!step) return null;
+  const opts = first.filter(s => !isR(s)); // svängar innan man kör in
+  const path = []; let no = 0;
+  for (let k = 0; k < 40 && step; k++) {
+    path.push(step); const cur = step.to; const ex = CORE.exitsFrom(G, cur, step.e);
+    if (cur === nd) { for (const x of G.nodes[nd].out) if (!isR(x) && x.e === came) opts.push({ path: path.concat([x]), e: x.e, fwd: x.fwd, to: x.to, no: 0, back: true }); break; }
+    for (const x of ex) if (!isR(x)) opts.push({ path: path.concat([x]), e: x.e, fwd: x.fwd, to: x.to, no: ++no });
+    step = ex.find(isR);
+  }
+  return opts.some(o => o.path) ? opts : null;
 }
 // Kör vidare själv när det inte finns något riktigt vägval
 function autoContinue(exits) {
@@ -2056,13 +2108,15 @@ function renderChoices() {
   if (!state.choosing) return;
   const showName = level() <= 2;
   let bestIdx = -1;
-  if (state.showNext) { const r = CORE.fastestTo(G, state.node, state.target, state.came); const f = r && r.steps[0]; if (f) bestIdx = state.exits.findIndex(x => x.e === f.e && x.fwd === f.fwd); }
+  if (state.showNext) { const r = CORE.fastestTo(G, state.node, state.target, state.came); const f = r && r.steps[0]; if (f) bestIdx = state.exits.findIndex(x => (x.path || [x]).every((p, j) => r.steps[j] && r.steps[j].e === p.e && r.steps[j].fwd === p.fwd)); }
   $('#uturn').classList.toggle('bestTurn', !!state.showNext && bestIdx < 0 && state.steps.length > 0);
   state.exits.forEach((s, i) => {
     const e = G.edges[s.e]; const b = document.createElement('button'); b.className = 'choice' + (i === bestIdx ? ' best' : ''); b.type = 'button';
     const nm = e.name || CORE.CLS_NAME[e.cls];
-    b.setAttribute('aria-label', 'Kör mot ' + (level() <= 2 ? nm : 'riktning ' + (i + 1)));
-    b.innerHTML = `<span class="disc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 9h-4.5v9h-5v-9H5z" fill="currentColor"/></svg></span>${showName ? `<span class="lbl">${esc(nm)}</span>` : ''}`;
+    const ord = s.path ? (s.back ? 'Runt, tillbaka' : s.no + (s.no <= 2 ? ':a' : ':e') + ' avfarten') : '';
+    b.setAttribute('aria-label', (ord ? ord + ', ' : '') + 'Kör mot ' + (level() <= 2 ? nm : 'riktning ' + (i + 1)));
+    const lbl = s.back ? (showName ? 'Tillbaka · ' + nm : 'Tillbaka') : (showName ? nm : ord);
+    b.innerHTML = `<span class="disc">${s.path && !s.back ? `<b class="rno">${s.no}</b>` : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 9h-4.5v9h-5v-9H5z" fill="currentColor"/></svg>`}</span>${lbl ? `<span class="lbl">${esc(lbl)}</span>` : ''}`;
     b.onclick = () => choose(i);
     box.appendChild(b);
   });
@@ -2083,11 +2137,11 @@ function placeChoices() {
     const a = angs[i]; let x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
     x = Math.max(40, Math.min(W - 40, x)); const hintTop = ($('#controls').getBoundingClientRect().top || H) - $('#app').getBoundingClientRect().top; y = Math.max(120, Math.min(Math.min(H - 90, hintTop - 34), y));
     b.style.left = x + 'px'; b.style.top = y + 'px';
-    const svg = b.querySelector('svg'); svg.style.transform = `rotate(${(a + Math.PI / 2)}rad)`;
+    const svg = b.querySelector('svg'); if (svg) svg.style.transform = `rotate(${(a + Math.PI / 2)}rad)`;
   });
 }
 $('#stopBtn').onclick = () => { state.stopNext = true; $('#stopBtn').classList.add('armed'); $('#stopBtn').innerHTML = 'Stannar<small>vid nästa korsning</small>'; };
-function choose(i) { if (!state.choosing) return; state.choosing = false; state.autoRun = 0; $('#stopBtn').hidden = true; $('#uturn').classList.remove('bestTurn'); $('#choices').innerHTML = ''; go(state.exits[i]); }
+function choose(i) { if (!state.choosing) return; state.choosing = false; state.autoRun = 0; $('#stopBtn').hidden = true; $('#uturn').classList.remove('bestTurn'); $('#choices').innerHTML = ''; const x = state.exits[i]; if (x.path) { state.queue = x.path.slice(1); go(x.path[0]); } else { state.queue = null; go(x); } }
 $('#uturn').onclick = () => {
   if (state.mode !== 'drive' || !state.choosing) return;
   const last = state.steps[state.steps.length - 1];
@@ -2279,7 +2333,7 @@ resize();
 if (BOARD_ON && !store.player) nameGate(menu); else menu();
 try { if (sessionStorage.getItem('uh-open-editor')) { sessionStorage.removeItem('uh-open-editor'); store.settings.mode = 'auto'; editList(); } } catch (e) {}
 setInterval(() => { if (state.mode === 'drive' && state.choosing) draw(); }, 260);
-if (location.hash === '#dbg') window.__uh = { view, draw, get G() { return G; }, state, hideSheet, duelFinal, streetPath, choose: (i) => choose(i), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu };
+if (location.hash === '#dbg') window.__uh = { view, draw, get G() { return G; }, state, hideSheet, duelFinal, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu };
 })();
 </script>
 
