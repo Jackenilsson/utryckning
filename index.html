@@ -2227,10 +2227,22 @@ function placeCompass() {
   const st = G.streets.get(state.target); let best = null, bd = Infinity;
   for (const id of st.edges) for (const p of G.edges[id].pts) { const d = Math.hypot(p[0] - state.car.x, p[1] - state.car.y); if (d < bd) { bd = d; best = p; } }
   const [tx, ty] = w2s(best[0], best[1]);
-  if (tx > 30 && tx < W - 30 && ty > 100 && ty < H - 90) { box.hidden = true; return; }
   const [cx, cy] = w2s(state.car.x, state.car.y); const a = Math.atan2(ty - cy, tx - cx);
-  const rx = W / 2 - 50, ry = (H - 200) / 2; const k = Math.min(Math.abs(rx / Math.cos(a)), Math.abs(ry / Math.sin(a)));
-  box.style.left = (W / 2 + Math.cos(a) * k) + 'px'; box.style.top = (100 + ry + Math.sin(a) * k) + 'px';
+  // Synligt kartområde: under rubriken, ovanför ledtrådsrutan
+  const top = 100, ctl = $('#controls').getBoundingClientRect(), app = $('#app').getBoundingClientRect();
+  const bot = Math.max(top + 120, (ctl.top || H) - app.top - 20);
+  const onScreen = tx > 30 && tx < W - 30 && ty > top && ty < bot;
+  let px, py;
+  if (onScreen) {
+    // Målet syns på skärmen: lägg pilen en bit från bilen, åt målets håll (den försvann tidigare här)
+    const k = Math.max(55, Math.min(110, Math.hypot(tx - cx, ty - cy) * 0.5)); px = cx + Math.cos(a) * k; py = cy + Math.sin(a) * k;
+  } else {
+    const mx = W / 2, my = (top + bot) / 2, rx = W / 2 - 50, ry = (bot - top) / 2 - 12;
+    const a2 = Math.atan2(ty - my, tx - mx); const k = Math.min(Math.abs(rx / Math.cos(a2)), Math.abs(ry / Math.sin(a2)));
+    px = mx + Math.cos(a2) * k; py = my + Math.sin(a2) * k;
+  }
+  px = Math.max(45, Math.min(W - 45, px)); py = Math.max(top + 10, Math.min(bot - 10, py));
+  box.style.left = px + 'px'; box.style.top = py + 'px';
   $('#compArrow').style.display = 'inline-block'; $('#compArrow').style.transform = `rotate(${a + Math.PI / 2}rad)`;
   $('#compDist').textContent = bd > 950 ? (bd / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(bd / 10) * 10 + ' m';
   box.hidden = false;
