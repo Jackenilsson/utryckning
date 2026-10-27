@@ -2072,7 +2072,7 @@ function utfartOptions(nd, came) {
   if (G.utfartEnd == null || nd !== G.utfartEnd || came !== G.utfartEdge) return null;
   const opts = [];
   for (const x of CORE.exitsFrom(G, nd, came)) {
-    if (x.e === G.coopEdge) { opts.push({ path: [x], e: x.e, fwd: x.fwd, to: x.to, lab: 'Mot Coop' }); continue; }
+    if (x.e === G.coopEdge) { opts.push({ path: [x], e: x.e, fwd: x.fwd, to: x.to, lab: 'Mot Coop', pin: 60 }); continue; }
     if (G.edges[x.e].len < 40) { for (const y of CORE.exitsFrom(G, x.to, x.e)) { const h = CORE.stepHeading(G, y, 40); opts.push({ path: [x, y], e: y.e, fwd: y.fwd, to: y.to, lab: (Math.sin(h) < 0 ? 'Norrut' : 'Söderut') + ' E4' }); } }
     else opts.push(x);
   }
@@ -2152,7 +2152,14 @@ function placeChoices() {
   const idx = angs.map((a, i) => i).sort((i, j) => angs[i] - angs[j]);
   for (let k = 0; k < 3; k++) for (let m = 0; m < idx.length; m++) { const i = idx[m], j = idx[(m + 1) % idx.length]; if (i === j) continue; let d = angs[j] - angs[i]; while (d < 0) d += Math.PI * 2; if (d < SEP && idx.length > 1) { const push = (SEP - d) / 2; angs[i] -= push; angs[j] += push; } }
   btns.forEach((b, i) => {
-    const a = angs[i]; let x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
+    let a = angs[i]; let x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
+    const ex = state.exits[i];
+    if (ex && ex.pin) { // knappen ligger på vägen, en bit in, och pilen följer vägens riktning där
+      const chain = ex.path.slice(); for (let k = 0; k < 6; k++) { const l = chain[chain.length - 1]; const nx = CORE.exitsFrom(G, l.to, l.e).filter(y => G.edges[y.e].cls === G.edges[l.e].cls); if (nx.length !== 1) break; chain.push(nx[0]); }
+      const pts = []; for (const st of chain) { const q = CORE.stepPts(G, st); pts.push(...(pts.length ? q.slice(1) : q)); }
+      let acc = 0, done = false; for (let k = 1; k < pts.length && !done; k++) { const L = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); const [ox, oy] = w2s(pts[k - 1][0], pts[k - 1][1]); const [qx, qy] = w2s(pts[k][0], pts[k][1]);
+        for (let m = 0; m <= L; m += 2) { const t = L ? m / L : 1; const px = ox + (qx - ox) * t, py = oy + (qy - oy) * t; if (acc + m >= ex.pin || (k === pts.length - 1 && m + 2 > L)) { const d = Math.hypot(px - cx, py - cy) || 1; const f = Math.max(1, R / d); x = cx + (px - cx) * f; y = cy + (py - cy) * f; a = Math.atan2(qy - oy, qx - ox); done = true; break; } } acc += L; }
+    }
     x = Math.max(40, Math.min(W - 40, x)); const hintTop = ($('#controls').getBoundingClientRect().top || H) - $('#app').getBoundingClientRect().top; y = Math.max(120, Math.min(Math.min(H - 90, hintTop - 34), y));
     b.style.left = x + 'px'; b.style.top = y + 'px';
     const svg = b.querySelector('svg'); if (svg) svg.style.transform = `rotate(${(a + Math.PI / 2)}rad)`;
