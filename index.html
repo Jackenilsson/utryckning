@@ -396,6 +396,17 @@ const CORE = (function () {
         }
       }
     }
+    // Korta namnlösa återvändsvägar (infarter, gårdar som märkts som väg) ska inte gå att köra in på
+    {
+      const inc = nodes.map(() => []); edges.forEach(e => { inc[e.a].push(e.id); inc[e.b].push(e.id); });
+      const minor = (e) => !e.name && e.cls >= 4 && e.cls <= 7; const seen = new Set();
+      for (const e0 of edges) { if (!minor(e0) || seen.has(e0.id)) continue;
+        const comp = [], touch = new Set(), st = [e0.id]; seen.add(e0.id); let len = 0;
+        while (st.length) { const id = st.pop(); const E = edges[id]; comp.push(id); len += E.len;
+          for (const n of [E.a, E.b]) for (const f of inc[n]) { const F = edges[f]; if (minor(F)) { if (!seen.has(f)) { seen.add(f); st.push(f); } } else if (F.cls < 8) touch.add(n); } }
+        if (touch.size <= 1 && len < 150) { const ids = new Set(comp); for (const id of comp) edges[id].cls = 8; nodes.forEach(n => { n.out = n.out.filter(x => !ids.has(x.e)); }); }
+      }
+    }
     // Startnod: närmaste nod till brandstationen, helst på Parkgatan
     const [sx, sy] = fromLL(D.s[0], D.s[1]);
     let station = -1, best = 1e18;
