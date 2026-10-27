@@ -2072,7 +2072,7 @@ function utfartOptions(nd, came) {
   if (G.utfartEnd == null || nd !== G.utfartEnd || came !== G.utfartEdge) return null;
   const opts = [];
   for (const x of CORE.exitsFrom(G, nd, came)) {
-    if (x.e === G.coopEdge) { opts.push({ path: [x], e: x.e, fwd: x.fwd, to: x.to, lab: 'Mot Coop', pin: 60 }); continue; }
+    if (x.e === G.coopEdge) { opts.push({ path: [x], e: x.e, fwd: x.fwd, to: x.to, lab: 'Mot Coop' }); continue; }
     if (G.edges[x.e].len < 40) { for (const y of CORE.exitsFrom(G, x.to, x.e)) { const h = CORE.stepHeading(G, y, 40); opts.push({ path: [x, y], e: y.e, fwd: y.fwd, to: y.to, lab: (Math.sin(h) < 0 ? 'Norrut' : 'Söderut') + ' E4' }); } }
     else opts.push(x);
   }
