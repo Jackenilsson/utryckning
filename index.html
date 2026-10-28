@@ -2249,19 +2249,37 @@ $('#giveUp').onclick = () => {
   toast('Spelet kör resten', C.purple);
   if (state.choosing) { state.choosing = false; $('#choices').innerHTML = ''; atNode(); }
 };
+// Kommer nästa nod att visa ett vägval? Då stannar bilen strax före korsningen i stället för mitt i den.
+function willChooseAt(step) {
+  if (state.gaveUp || (state.queue && state.queue.length)) return false;
+  if (utfartOptions(step.to, step.e) || ringOptions(step.to, step.e)) return true;
+  return CORE.exitsFrom(G, step.to, step.e).length !== 1;
+}
 function go(step) {
+  const last = state.steps[state.steps.length - 1];
   state.steps.push(step); state.came = step.e;
-  const e = G.edges[step.e]; const pts = CORE.stepPts(G, step);
+  const e = G.edges[step.e]; let pts = CORE.stepPts(G, step);
+  // Bilen står kanske en bit före korsningen: börja därifrån
+  if (state.car) { const gap = Math.hypot(state.car.x - pts[0][0], state.car.y - pts[0][1]);
+    if (gap > 0.5) {
+      if (last && last.e === step.e) { // vändning på samma väg: hoppa över den bit bilen inte körde
+        let acc = 0, k = 1; while (k < pts.length - 1 && acc + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]) < gap) { acc += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); k++; }
+        pts = [[state.car.x, state.car.y]].concat(pts.slice(k));
+      } else pts = [[state.car.x, state.car.y]].concat(pts);
+    } }
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-  const full = cum[cum.length - 1];
+  const full = cum[cum.length - 1]; const lead = full - e.len > 0 ? full - e.len : 0;
   // Kör bilen in på målgatan: stanna efter en bit och räkna som framme
   const tg = state.mode === 'drive' && G.streets.get(state.target); const final = !!(tg && tg.edges.includes(step.e));
-  const total = final ? Math.min(full, CORE.ENTER) : full; const tFrac = full ? total / full : 1;
+  let total = full;
+  if (final) total = Math.min(full, lead + CORE.ENTER);
+  else if (willChooseAt(step)) { const stopM = Math.min(22, 26 / Math.max(0.2, view.scale)); total = Math.max(full * 0.55, full - stopM); }
+  const tFrac = final ? Math.min(1, (total - lead) / Math.max(1, e.len)) : 1;
   const vis = Math.max(70, (CORE.SPEED[e.cls] / 3.6) * 11) * (state.gaveUp ? 2.2 : 1); // m/s på skärmen
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const baseTime = state.simTime; const t0 = performance.now(); const dur = reduce ? 150 : (total / vis) * 1000;
   const prevSteps = state.steps.slice(0, -1);
-  setHint(state.gaveUp ? 'Spelet visar vägen' + `<small>${e.name ? esc(e.name) : 'Kör…'}</small>` : (level() <= 1 && e.name ? esc(e.name) : 'Kör…') + `<small>${Math.round(total)} m</small>`);
+  setHint(state.gaveUp ? 'Spelet visar vägen' + `<small>${e.name ? esc(e.name) : 'Kör…'}</small>` : (level() <= 1 && e.name ? esc(e.name) : 'Kör…') + `<small>${Math.round(e.len)} m</small>`);
   cancelAnimationFrame(anim);
   const tick = (now) => {
     const f = Math.min(1, (now - t0) / dur); const d = f * total;
@@ -2275,7 +2293,7 @@ function go(step) {
     const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.toggle('over', shown > state.limit);
     state.trailPath = stepsPath(prevSteps, pts.slice(0, i).concat([[x, y]]));
     draw();
-    if (f < 1) anim = requestAnimationFrame(tick); else if (final) { state.trailPath = stepsPath(prevSteps, pts.slice(0, i).concat([[x, y]])); arrive(); } else { state.node = step.to; state.trailPath = stepsPath(state.steps); atNode(); }
+    if (f < 1) anim = requestAnimationFrame(tick); else if (final) { arrive(); } else { state.node = step.to; atNode(); }
   };
   anim = requestAnimationFrame(tick);
 }
