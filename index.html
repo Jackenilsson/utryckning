@@ -2387,7 +2387,7 @@ function placeChoices() {
   });
 }
 $('#stopBtn').onclick = () => { state.stopNext = true; $('#stopBtn').classList.add('armed'); $('#stopBtn').innerHTML = 'Stannar<small>vid nästa korsning</small>'; };
-function choose(i) { if (!state.choosing) return; state.choosing = false; state.autoRun = 0; $('#stopBtn').hidden = true; $('#uturn').classList.remove('bestTurn'); $('#choices').innerHTML = ''; const x = state.exits[i]; if (x.path) { state.queue = x.path.slice(1); go(x.path[0]); } else { state.queue = null; go(x); } }
+function choose(i) { if (!state.choosing) return; state.choosing = false; state.autoRun = 0; if (state.showCompass) { state.showCompass = false; $('#compass').hidden = true; } $('#stopBtn').hidden = true; $('#uturn').classList.remove('bestTurn'); $('#choices').innerHTML = ''; const x = state.exits[i]; if (x.path) { state.queue = x.path.slice(1); go(x.path[0]); } else { state.queue = null; go(x); } }
 $('#uturn').onclick = () => {
   if (state.mode !== 'drive' || !state.choosing) return;
   const last = state.steps[state.steps.length - 1];
@@ -2395,6 +2395,7 @@ $('#uturn').onclick = () => {
   const e = G.edges[last.e]; const back = { e: last.e, fwd: !last.fwd, to: last.fwd ? e.a : e.b };
   if (e.ow && state.exits && state.exits.length) { toast('Enkelriktat · kan inte vända', C.amber); return; }
   state.autoRun = 0;
+  if (state.showCompass) { state.showCompass = false; $('#compass').hidden = true; }
   $('#uturn').classList.remove('bestTurn'); state.penalty += 15; state.uturns++; state.choosing = false; $('#choices').innerHTML = ''; toast('Vänder · +15 s', C.amber); go(back);
 };
 window.addEventListener('keydown', (ev) => {
@@ -2406,7 +2407,7 @@ window.addEventListener('keydown', (ev) => {
   if (best >= 0 && bd < 1.3) choose(best); else if (ev.key === 'ArrowDown') $('#uturn').click();
 });
 const HINTS = [
-  { cost: 10, name: 'Riktning', text: 'Pilen visar åt vilket håll målet ligger' },
+  { cost: 10, name: 'Riktning', text: 'Pilen pekar mot målet tills du kör vidare' },
   { cost: 15, name: 'Nästa sväng', text: 'Rätt val lyser gult i varje korsning' },
   { cost: 20, name: 'Visa gatan', text: 'Målgatan markeras på kartan' }
 ];
