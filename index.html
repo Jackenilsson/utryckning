@@ -275,6 +275,18 @@ button:focus-visible,summary:focus-visible,.textin:focus-visible{outline:2px sol
   .grp{margin-top:12px}
 }
 @media (prefers-reduced-motion:reduce){.mode,.seg button,.sw i,.sw i::after,.primary,.adv > summary::after{transition:none}.primary:active{transform:none}}
+/* Ny meny: ett val i taget */
+.wizTop{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-height:40px}
+.wback{flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:700 22px var(--fDisplay);cursor:pointer;line-height:1}
+.wgrid{display:grid;gap:10px}
+@media (min-width:768px){.wgrid{grid-template-columns:1fr 1fr}.wgrid .wcard:first-child:nth-last-child(odd){grid-column:1 / -1}}
+.wcard{display:flex;align-items:center;gap:14px;min-height:72px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);text-align:left;cursor:pointer;transition:border-color .15s}
+.wcard:hover,.wcard:active{border-color:var(--red)}
+.wcard b{font-family:var(--fDisplay);font-size:19px;display:block}
+.wcard small{color:var(--muted);font-size:13px}
+.wcard .mi{flex:none;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--redSoft);color:var(--red)}
+.wcard .mi svg{width:22px;height:22px}
+.wcard .mt{min-width:0}
 </style>
 
 </head>
@@ -1203,6 +1215,125 @@ const ICON = {
   omr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0 1 12 0v6"/><path d="M4 17h16"/><path d="M10 20h4"/><path d="M12 2v2M4.2 5.2l1.4 1.4M19.8 5.2l-1.4 1.4"/></svg>'
 };
+// ---------- Ny meny: ett val i taget ----------
+function wizMenu() {
+  const s = store.settings; const w = state.wiz || (state.wiz = { step: 'start', cat: null, areaRet: null });
+  if (!OBJ.size && s.mode === 'auto') { s.mode = 'drive'; save(); }
+  const MODE_NAME = { drive: 'Utryckning', prick: 'Pricka gatan', auto: 'Automatlarm', omr: 'Pricka området', orter: 'Pricka orten', duel: 'Duellen', utm: 'Utmaning' };
+  const pl = prickLike();
+  const areaTxt = s.mode === 'omr' ? 'Hela Härnösand' : s.mode === 'orter' ? 'Härnösands kommun' : areaById(s.area).name;
+  const noArea = ['omr', 'orter', 'utm'].includes(s.mode);
+  const ut = s.utmType || 'drive'; const utP = ut === 'omr' || ut === 'orter'; const uN = Math.max(1, Math.min(25, s.utmCount || 5));
+  const dl = s.duel || (s.duel = { names: ['', ''], rounds: 5 });
+  const nCand = candidates(s.area, pl).length;
+  const sw = (id, on, title, sub, hide) => `<label class="sw" ${hide ? 'hidden' : ''}><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" role="switch" id="${id}" ${on ? 'checked' : ''}><i aria-hidden="true"></i></label>`;
+  const card = (v, t, d, ic) => `<button type="button" class="wcard" data-v="${v}"><span class="mi">${ICON[ic || v] || ICON.drive}</span><span class="mt"><b>${t}</b><small>${d}</small></span></button>`;
+  const crumb = w.step === 'start' ? 'Räddningstjänsten · Härnösand' : w.step === 'cat' ? (w.cat === 'ova' ? 'Öva' : 'Tävla') : w.step === 'area' ? MODE_NAME[s.mode] : MODE_NAME[s.mode] + (noArea ? '' : ' · ' + areaTxt);
+  const lvlSeg = `<section class="grp"><h3 class="grpT">Svårighetsgrad</h3><div class="seg two" id="levelSeg">${LEVELS.map(l => `<button type="button" data-v="${l.id}" aria-pressed="${s.level === l.id}"><b>${l.name}</b><span>${l.desc}</span></button>`).join('')}</div></section>`;
+  const areaRow = `<button type="button" class="secondary" id="wArea" style="width:100%">Område: ${esc(areaTxt)} · ändra</button>`;
+  const bestKey = s.mode === 'omr' || s.mode === 'orter' ? s.mode : (s.mode === 'auto' ? 'auto_' : '') + s.area;
+  const rb = store.roundBest && store.roundBest[bestKey];
+  const rec = pl ? `<div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat"><b>${rb ? rb.pct + ' %' : '–'}</b><span>${rb ? 'rekord här, ' + fmtT(rb.secs) : 'inget rekord här än'}</span></div><div class="stat"><b>${Object.values(store.streets).filter(r => r.loc && r.loc[r.loc.length - 1] === 'g').length}</b><span>rätt direkt senast</span></div></div>` : '';
+  let body = '', foot = '';
+  if (w.step === 'start') {
+    body = `<h1>Vad vill du göra?</h1><div class="wgrid">
+      ${card('drive', 'Köra utryckning', 'Larm från stationen till en gata, på tid', 'drive')}
+      ${card('ova', 'Öva på kartan', 'Pricka gator, områden och orter', 'prick')}
+      ${card('tavla', 'Tävla', 'Duellen på en telefon, eller utmaning med kod', 'duel')}
+    </div>
+    <details class="adv" id="advBox" style="margin-top:14px"><summary>Avancerat</summary><div class="advBody"><div class="swList">
+      ${sw('optVoice', s.voice, 'Larm med röst', 'Larmet läses upp')}
+      ${sw('optLm', s.lm !== false, 'Visa byggnader och platser', 'Skolor, vård, förskolor m.m. på kartan')}
+      ${sw('optAuto', s.autoStraight === true, 'Kör själv rakt fram', 'Stanna bara vid riktiga val')}
+      ${sw('optOldMenu', false, 'Gamla menyn', 'Allt på en skärm')}
+    </div>
+    <button type="button" class="secondary" id="builderBtn" style="width:100%">Byggläge · placera objekt, byggnader och vägar</button>
+    <div class="stats"><div class="stat"><b>${store.runs}</b><span>utryckningar</span></div><div class="stat"><b>${store.runs ? Math.round(store.effSum / store.runs) + ' %' : '–'}</b><span>snitt mot snabbaste väg</span></div></div></div></details>`;
+  } else if (w.step === 'cat') {
+    body = w.cat === 'ova' ? `<h1>Vad vill du öva på?</h1><div class="wgrid">
+      ${card('prick', 'Pricka gatan', 'Tryck där gatan ligger, tre försök per gata', 'prick')}
+      ${OBJ.size ? card('auto', 'Automatlarm', 'Stationens objekt', 'auto') : ''}
+      ${card('omr', 'Pricka området', 'Alla 36 områden, som Ganderssons quiz', 'omr')}
+      ${card('orter', 'Pricka orten', 'Alla 20 orter runt stan, på satellitbild', 'orter')}
+    </div>` : `<h1>Hur vill du tävla?</h1><div class="wgrid">
+      ${card('duel', 'Duellen', 'Två spelare turas om på en telefon', 'duel')}
+      ${card('utm', 'Utmaning', 'Skicka en kod, kollegan får samma runda', 'utm')}
+    </div>`;
+  } else if (w.step === 'area') {
+    const unit = s.mode === 'auto' ? 'objekt' : 'gator';
+    body = `<h1>Var?</h1><div class="wgrid">
+      ${AREAS.map(a => `<button type="button" class="wcard" data-v="${a.id}"><span class="mt"><b>${a.name}</b><small>${a.desc} · ${candidates(a.id, pl).length} ${unit}</small></span></button>`).join('')}
+    </div>
+    <details class="dists" ${areaById(s.area).dist ? 'open' : ''} style="margin-top:12px"><summary><b>Stadsdelar</b><span>Öva en stadsdel i taget</span></summary>
+      <div class="dchips" id="wDist">${DISTRICTS.map(d => { const n = candidates('d:' + d[0], pl).length; const bk = (s.mode === 'auto' ? 'auto_' : '') + 'd:' + d[0]; return n === 0 ? '' : `<button type="button" class="dchip" data-v="d:${d[0]}">${esc(d[1])}<small>${store.roundBest && store.roundBest[bk] ? '★ ' + store.roundBest[bk].pct + ' %' : n}</small></button>`; }).join('')}</div>
+    </details>`;
+  } else {
+    const SUMW = { drive: 'Peka ut gatan och kör dit från stationen. Du väljer väg i varje korsning.', prick: areaById(s.area).dist ? 'Alla gator i stadsdelen, en i taget. Kartan ligger still och färgerna sitter kvar.' : 'Tio gator i rad. Tryck där gatan ligger, tre försök per gata.', auto: s.autoDrive ? 'Peka ut objektet och kör dit från stationen.' : 'Tio objekt i rad. Tryck där de ligger, tre försök per objekt.', omr: 'Alla områden på en karta. Tryck på rätt prick, två fel och den visas.', orter: 'Alla 20 orter på en karta. Tryck på rätt prick.', duel: 'Samma larm, ni turas om på en telefon. Flest poäng vinner rundan.', utm: utP ? (ut === 'omr' ? 'Alla 36 områden i slumpad ordning. Skicka koden, kollegan får samma ordning.' : 'Alla 20 orter i slumpad ordning. Skicka koden, kollegan får samma ordning.') : `Kör ${uN === 1 ? 'ett larm' : uN + ' larm'} och skicka koden. Den som klistrar in den får samma larm.` };
+    let inner = '';
+    if (s.mode === 'drive') inner = `${lvlSeg}<div class="swList" style="margin:12px 0">${sw('optLocate', s.locate, 'Peka ut gatan först', 'Tryck på kartan innan du kör. Målet lyser inte under körningen.')}</div>${areaRow}`;
+    else if (s.mode === 'auto') inner = `<div class="seg two" id="autoSeg" style="margin-bottom:12px"><button type="button" data-v="1" aria-pressed="${!!s.autoDrive}"><b>Kör dit</b><span>Peka ut och kör</span></button><button type="button" data-v="0" aria-pressed="${!s.autoDrive}"><b>Bara peka ut</b><span>10 objekt i rad</span></button></div>${s.autoDrive ? lvlSeg + `<div class="swList" style="margin:12px 0">${sw('optLocate', s.locate, 'Peka ut objektet först', 'Tryck på kartan innan du kör. Målet lyser inte under körningen.')}</div>` : rec}${areaRow}`;
+    else if (s.mode === 'prick') inner = `${rec}${areaRow}`;
+    else if (s.mode === 'omr' || s.mode === 'orter') inner = rec;
+    else if (s.mode === 'duel') inner = `<div class="pane" style="margin-bottom:12px"><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="textin" id="duelA" maxlength="14" placeholder="Spelare 1" aria-label="Spelare 1" value="${esc(dl.names[0])}" style="flex:1;min-width:0;margin:0;font-size:16px;padding:10px"><input class="textin" id="duelB" maxlength="14" placeholder="Spelare 2" aria-label="Spelare 2" value="${esc(dl.names[1])}" style="flex:1;min-width:0;margin:0;font-size:16px;padding:10px"></div><div class="seg three" id="duelRounds">${[[3, 'Bäst av 3', 'först till 2'], [5, 'Bäst av 5', 'först till 3'], [7, 'Bäst av 7', 'först till 4']].map(([v, n, d]) => `<button type="button" data-v="${v}" aria-pressed="${dl.rounds === v}"><b>${n}</b><span>${d}</span></button>`).join('')}</div></div>${lvlSeg}<div style="height:12px"></div>${areaRow}`;
+    else inner = `<section class="grp"><h3 class="grpT">Vad ska utmaningen vara?</h3>
+      <div class="seg three" id="utmType">${[['drive', 'Utryckning', 'Kör till adresser'], ['omr', 'Pricka området', '36 områden'], ['orter', 'Pricka orten', '20 orter']].map(([v, n, d]) => `<button type="button" data-v="${v}" aria-pressed="${ut === v}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>
+      <div class="cntRow" ${ut === 'drive' ? '' : 'hidden'}>
+        <label for="utmCount"><b>Antal adresser: <span id="utmCountTxt">${uN}</span></b><small>1–25 larm i rad</small></label>
+        <div class="stepper"><button type="button" id="utmMinus" aria-label="Färre adresser" ${uN <= 1 ? 'disabled' : ''}>−</button><select id="utmCount" aria-label="Antal adresser">${Array.from({ length: 25 }, (_, i) => `<option value="${i + 1}" ${uN === i + 1 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select><button type="button" id="utmPlus" aria-label="Fler adresser" ${uN >= 25 ? 'disabled' : ''}>+</button></div>
+      </div></section>
+      ${ut === 'drive' ? `${lvlSeg}<div class="swList" style="margin:12px 0">${sw('optLocate', s.locate, 'Peka ut gatan först', 'Målet lyser inte under körningen.')}</div>${areaRow}` : ''}
+      <div class="pane" style="margin-top:12px">
+        <label class="eyebrow" for="utmName">Ditt namn</label>
+        <input class="textin" id="utmName" maxlength="10" placeholder="t.ex. Kalle" value="${esc(s.utmName || '')}" style="margin:0;font-size:16px;padding:10px">
+        <label class="eyebrow" for="utmCode">Har du fått en kod?</label>
+        <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="textin" id="utmCode" placeholder="Klistra in koden" autocapitalize="characters" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;margin:0;font:600 15px ui-monospace,monospace;padding:10px"><button type="button" class="secondary" id="utmPlay" style="padding:0 16px">Spela</button></div>
+        <p class="lead" id="utmErr" style="font-size:13px;color:var(--bad);margin:0" hidden></p>
+      </div>`;
+    body = `<h1>${MODE_NAME[s.mode]}</h1><p class="mSum" style="margin-top:0">${SUMW[s.mode]}</p>${inner}`;
+    const startTxt = s.mode === 'utm' ? 'Skapa utmaning' : s.mode === 'duel' ? 'Starta duellen' : pl ? 'Starta omgång' : 'Starta larm';
+    const footTxt = `${MODE_NAME[s.mode]}${s.mode === 'utm' ? ' · ' + (utP ? (ut === 'omr' ? 'Pricka området' : 'Pricka orten') : uN + (uN === 1 ? ' adress' : ' adresser')) : ''} · ${s.mode === 'utm' && utP ? (ut === 'omr' ? 'Hela Härnösand' : 'Härnösands kommun') : areaTxt}${pl || (s.mode === 'utm' && utP) || s.mode === 'omr' || s.mode === 'orter' ? '' : ' · ' + LEVELS[s.level - 1].name}`;
+    const ok = nCand || (s.mode === 'utm' && utP);
+    foot = `<div class="menuFoot"><div class="footSum">${footTxt}</div><button class="primary" id="wStart" ${ok ? '' : 'disabled'}>${ok ? startTxt : 'Inget att öva på här'}</button></div>`;
+  }
+  showSheet(`<div class="mScroll" id="mScroll"><div class="wizTop">${w.step === 'start' ? '' : '<button type="button" class="wback" id="wizBack" aria-label="Tillbaka">‹</button>'}<span class="eyebrow">${esc(crumb)}</span></div>${body}</div>${foot}`);
+  sheet.classList.add('menuSheet');
+  const rerender = () => { state.menuScroll = ($('#mScroll') || sheet).scrollTop; menu(); };
+  const bk = $('#wizBack'); if (bk) bk.onclick = () => {
+    if (w.step === 'cat') w.step = 'start';
+    else if (w.step === 'area') w.step = w.areaRet === 'final' ? 'final' : (w.cat ? 'cat' : 'start');
+    else if (w.step === 'final') w.step = noArea ? (w.cat ? 'cat' : 'start') : 'area';
+    w.areaRet = null; menu();
+  };
+  sheet.querySelectorAll('.wgrid .wcard, #wDist .dchip').forEach(b => b.onclick = () => { const v = b.dataset.v;
+    if (w.step === 'start') { if (v === 'drive') { s.mode = 'drive'; save(); w.cat = null; w.step = 'area'; } else { w.cat = v; w.step = 'cat'; } }
+    else if (w.step === 'cat') { s.mode = v; save(); w.step = (v === 'omr' || v === 'orter' || v === 'utm') ? 'final' : 'area'; }
+    else if (w.step === 'area') { s.area = v; save(); w.step = 'final'; w.areaRet = null; }
+    menu(); });
+  const on = (id, fn) => { const el = $(id); if (el) el.onchange = fn; };
+  on('#optVoice', (e) => { s.voice = e.target.checked; save(); });
+  on('#optLm', (e) => { s.lm = e.target.checked; save(); requestDraw(); });
+  on('#optAuto', (e) => { s.autoStraight = e.target.checked; save(); });
+  on('#optLocate', (e) => { s.locate = e.target.checked; save(); });
+  on('#optOldMenu', (e) => { if (e.target.checked) { s.oldMenu = true; save(); menu(); } });
+  const bb = $('#builderBtn'); if (bb) bb.onclick = () => { state.bFitted = false; editList(); };
+  sheet.querySelectorAll('#levelSeg button').forEach(b => b.onclick = () => { s.level = +b.dataset.v; save(); rerender(); });
+  sheet.querySelectorAll('#autoSeg button').forEach(b => b.onclick = () => { s.autoDrive = b.dataset.v === '1'; save(); rerender(); });
+  sheet.querySelectorAll('#duelRounds button').forEach(b => b.onclick = () => { dl.rounds = +b.dataset.v; save(); rerender(); });
+  on('#duelA', (e) => { dl.names[0] = e.target.value.trim(); save(); }); on('#duelB', (e) => { dl.names[1] = e.target.value.trim(); save(); });
+  const wa = $('#wArea'); if (wa) wa.onclick = () => { w.areaRet = 'final'; w.step = 'area'; menu(); };
+  sheet.querySelectorAll('#utmType button').forEach(b => b.onclick = () => { s.utmType = b.dataset.v; s.utmName = $('#utmName').value.trim(); save(); rerender(); });
+  if ($('#utmCount')) {
+    const setN = (n) => { n = Math.max(1, Math.min(25, n)); s.utmCount = n; save(); $('#utmCount').value = n; $('#utmCountTxt').textContent = n; $('#utmMinus').disabled = n <= 1; $('#utmPlus').disabled = n >= 25; const fs = sheet.querySelector('.footSum'); if (fs) fs.textContent = `Utmaning · ${n}${n === 1 ? ' adress' : ' adresser'} · ${areaTxt} · ${LEVELS[s.level - 1].name}`; const ms = sheet.querySelector('.mSum'); if (ms) ms.textContent = `Kör ${n === 1 ? 'ett larm' : n + ' larm'} och skicka koden. Den som klistrar in den får samma larm.`; };
+    const uN0 = () => +$('#utmCount').value;
+    $('#utmCount').onchange = (e) => setN(+e.target.value); $('#utmMinus').onclick = () => setN(uN0() - 1); $('#utmPlus').onclick = () => setN(uN0() + 1);
+  }
+  if ($('#utmName')) $('#utmName').onchange = (e) => { s.utmName = e.target.value.trim(); save(); };
+  if ($('#utmPlay')) $('#utmPlay').onclick = () => { s.utmName = $('#utmName').value.trim(); save(); const r = chalParse($('#utmCode').value); if (typeof r === 'string') { $('#utmErr').textContent = r; $('#utmErr').hidden = false; return; } chalStart(r); };
+  const dt = sheet.querySelector('details.dists'); if (dt) dt.ontoggle = () => { state.distOpen = dt.open; };
+  const ws = $('#wStart'); if (ws) ws.onclick = (ev) => { const b = ev.currentTarget; if (b.disabled || state.starting) return; state.starting = true; b.disabled = true; b.classList.add('busy'); setTimeout(() => { state.starting = false; if (b.isConnected) { b.disabled = false; b.classList.remove('busy'); } }, 900); s.mode === 'utm' ? chalCreate() : s.mode === 'duel' ? startDuel() : pl ? startPrick() : startAlarm(); };
+  if (state.menuScroll) { $('#mScroll').scrollTop = state.menuScroll; state.menuScroll = 0; }
+}
+
 function menu() {
   state.modeOverride = null; state.starting = false; setBrightMap(false); $('#attrib').textContent = 'Kartdata © OpenStreetMap-bidragsgivare';
   resetMenuTop(); cancelAnimationFrame(revealAnim); state.duel = null; state.chal = null;
@@ -1211,6 +1342,7 @@ function menu() {
   $('#hud').hidden = true; $('#controls').hidden = true; $('#editActs').hidden = true; $('#rdActs').hidden = true; $('#stopBtn').hidden = true; $('#choices').innerHTML = ''; $('#compass').hidden = true; state.editing = null;
   view.rot = 0; view.anchorY = 0.32; view.cx = SX; view.cy = SY + 250; view.scale = Math.min(W, 520) / 1300;
   requestDraw();
+  if (store.settings.oldMenu !== true && location.hash !== '#dbg') return wizMenu();
   const s = store.settings; const pl = prickLike(); const bestKey = s.mode === 'omr' || s.mode === 'orter' ? s.mode : (s.mode === 'auto' ? 'auto_' : '') + s.area; const nCand = candidates(s.area, pl).length; const curA = areaById(s.area); const isDist = !!curA.dist; const ut = s.mode === 'utm' ? (s.utmType || 'drive') : null; const utP = ut === 'omr' || ut === 'orter'; const uN = Math.max(1, Math.min(25, s.utmCount || 5)); const dl = s.duel || (s.duel = { names: ['', ''], rounds: 5 });
   const avg = store.runs ? Math.round(store.effSum / store.runs) + ' %' : '–';
   const MODES = [['drive', 'Utryckning', 'Kör från stationen'], ['prick', 'Pricka gatan', 'Tryck på kartan'], ['auto', 'Automatlarm', 'Stationens objekt'], ['omr', 'Pricka området', 'Prickar på kartan'], ['orter', 'Pricka orten', 'Byar runt stan'], ['duel', 'Duellen', '2 spelare'], ['utm', 'Utmaning', 'Skicka en kod till en kollega']];
@@ -1295,6 +1427,7 @@ function menu() {
         <div class="swList">
           ${sw('optLm', s.lm !== false, 'Visa byggnader och platser', 'Skolor, vård, förskolor m.m. på kartan')}
           ${sw('optAuto', s.autoStraight === true, 'Kör själv rakt fram', 'Stanna bara vid riktiga val', pl || utP)}
+          ${sw('optNewMenu', s.oldMenu !== true, 'Nya menyn', 'Ett val i taget, steg för steg')}
         </div>
         ${pl ? `<div class="stats"><div class="stat"><b>${store.roundBest && store.roundBest[bestKey] ? store.roundBest[bestKey].pct + ' %' : '–'}</b><span>${store.roundBest && store.roundBest[bestKey] ? 'rekord här, ' + fmtT(store.roundBest[bestKey].secs) : 'inget rekord här än'}</span></div><div class="stat"><b>${Object.values(store.streets).filter(r => r.loc && r.loc[r.loc.length - 1] === 'g').length}</b><span>rätt direkt senast</span></div></div>` : `<div class="stats"><div class="stat"><b>${store.runs}</b><span>utryckningar</span></div><div class="stat"><b>${avg}</b><span>snitt mot snabbaste väg</span></div></div>`}
         <button type="button" class="secondary" id="builderBtn" style="width:100%">Byggläge · placera objekt, byggnader och vägar</button>
@@ -1331,6 +1464,7 @@ function menu() {
   $('#optVoice').onchange = (e) => { s.voice = e.target.checked; save(); };
   $('#optLm').onchange = (e) => { s.lm = e.target.checked; save(); requestDraw(); };
   $('#optAuto').onchange = (e) => { s.autoStraight = e.target.checked; save(); };
+  $('#optNewMenu').onchange = (e) => { s.oldMenu = e.target.checked ? false : true; save(); state.wiz = null; if (location.hash !== '#dbg') menu(); };
   $('#startBtn').onclick = (ev) => { const b = ev.currentTarget; if (b.disabled || state.starting) return; state.starting = true; b.disabled = true; b.classList.add('busy'); setTimeout(() => { state.starting = false; if (b.isConnected) { b.disabled = !(nCand || utP); b.classList.remove('busy'); } }, 900); s.mode === 'utm' ? chalCreate() : s.mode === 'duel' ? startDuel() : pl ? startPrick() : startAlarm(); };
   if (BOARD_ON) { $('#changeName').onclick = () => nameGate(menu); $('#boardBtn').onclick = showBoard; }
 }
@@ -2421,7 +2555,7 @@ resize();
 if (BOARD_ON && !store.player) nameGate(menu); else menu();
 try { if (sessionStorage.getItem('uh-open-editor')) { sessionStorage.removeItem('uh-open-editor'); store.settings.mode = 'auto'; editList(); } } catch (e) {}
 setInterval(() => { if (state.mode === 'drive' && state.choosing) draw(); }, 260);
-if (location.hash === '#dbg') window.__uh = { view, draw, get G() { return G; }, state, hideSheet, duelFinal, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu };
+if (location.hash === '#dbg' || location.hash === '#dbgw') window.__uh = { view, draw, get G() { return G; }, state, hideSheet, duelFinal, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu };
 })();
 </script>
 
