@@ -1134,7 +1134,7 @@ function drawLabels() {
 
 // ---------- Spelstatus ----------
 const state = { mode: 'menu', marks: [], car: null, labels: false, showTarget: false, steps: [], lastTarget: null };
-function level() { return state.chal ? state.chal.lvl : store.settings.level; }
+function level() { return state.rush ? 2 : state.chal ? state.chal.lvl : store.settings.level; }
 
 // ---------- Interaktion med kartan (dra, nyp, tryck) ----------
 const pointers = new Map(); let gesture = null;
@@ -1215,14 +1215,60 @@ const ICON = {
   omr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
   auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0 1 12 0v6"/><path d="M4 17h16"/><path d="M10 20h4"/><path d="M12 2v2M4.2 5.2l1.4 1.4M19.8 5.2l-1.4 1.4"/></svg>'
 };
+// ---------- Blixten & En chans: så många adresser som möjligt ----------
+let rushTimer = null;
+function rushBest() { return store.rushBest || (store.rushBest = { blitz: 0, one: 0 }); }
+function rushStart(kind) {
+  hideSheet();
+  state.rush = { kind, count: 0, lives: kind === 'blitz' ? 3 : 1, used: new Set(), t0: performance.now(), deadline: kind === 'blitz' ? performance.now() + 300000 : 0, done: false };
+  clearInterval(rushTimer);
+  if (kind === 'blitz') rushTimer = setInterval(() => { const r = state.rush; if (!r || r.done) { clearInterval(rushTimer); return; }
+    const left = Math.max(0, r.deadline - performance.now()) / 1000;
+    if (state.mode === 'drive' || state.mode === 'result') { $('#clock').textContent = fmt(left); $('#clock').classList.toggle('over', left < 30); }
+    if (performance.now() >= r.deadline && state.mode !== 'result') rushEnd('Tiden är ute'); }, 250);
+  rushNext();
+}
+function rushNext() {
+  const r = state.rush; if (!r || r.done) return;
+  const all = candidates('hela', false).map(c => c.name).filter(n => !r.used.has(n));
+  if (!all.length) return rushEnd('Alla gator klarade!');
+  const name = all[Math.random() * all.length | 0]; r.used.add(name);
+  startAlarm(name);
+}
+function rushAfterRun() {
+  const r = state.rush; const ok = !state.gaveUp && !state.noRoute && state.eff >= 65;
+  if (ok) { r.count++; toast('Rätt väg · ' + r.count + ' klarade', C.good); }
+  else { r.lives--; toast(state.gaveUp ? 'Gav upp · −1 liv' : 'För lång omväg · −1 liv', C.bad); }
+  if (r.lives <= 0) return setTimeout(() => rushEnd(state.gaveUp ? 'Du gav upp på ' + dispName(state.target) : 'För lång omväg till ' + dispName(state.target)), 1400);
+  if (r.kind === 'blitz' && performance.now() >= r.deadline) return setTimeout(() => rushEnd('Tiden är ute'), 1200);
+  setTimeout(() => { if (state.rush === r && !r.done) rushNext(); }, ok ? 1000 : 1800);
+}
+function rushEnd(why) {
+  const r = state.rush; if (!r || r.done) return; r.done = true; clearInterval(rushTimer);
+  cancelAnimationFrame(anim); state.choosing = false; $('#choices').innerHTML = ''; $('#controls').hidden = true; $('#stopBtn').hidden = true; $('#compass').hidden = true; $('#hud').hidden = true; resetMenuTop();
+  const B = rushBest(); const old = B[r.kind] || 0; const rec = r.count > old; if (rec) { B[r.kind] = r.count; save(); }
+  const secs = Math.round((performance.now() - r.t0) / 1000);
+  const name = r.kind === 'blitz' ? 'Blixten' : 'En chans';
+  say(why + '. ' + r.count + (r.count === 1 ? ' adress.' : ' adresser.'));
+  showSheet(`
+    <div class="eyebrow">${name} · slut</div>
+    <h1>${r.count} ${r.count === 1 ? 'adress' : 'adresser'}${rec ? ' · nytt rekord!' : ''}</h1>
+    <p class="lead">${esc(why)}.${r.kind === 'one' ? ' Du körde i ' + fmtT(secs) + '.' : ''}</p>
+    <div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat"><b>${rec ? (old ? old + ' → ' + r.count : r.count) : (old || '–')}</b><span>personligt bästa</span></div><div class="stat"><b>${r.kind === 'blitz' ? fmt(Math.min(300, secs)) + ' av 5:00' : '♥'.repeat(Math.max(0, r.lives)) || '0 liv'}</b><span>${r.kind === 'blitz' ? 'speltid' : 'liv kvar'}</span></div></div>
+    <div class="row" style="margin-top:14px"><button class="secondary" id="menuBtn">Meny</button><button class="primary" id="againBtn" style="margin:0">Spela igen</button></div>
+  `);
+  $('#menuBtn').onclick = menu; $('#againBtn').onclick = () => { state.rush = null; rushStart(r.kind); };
+  state.rush = null;
+}
+
 // ---------- Ny meny: ett val i taget ----------
 function wizMenu() {
   const s = store.settings; const w = state.wiz || (state.wiz = { step: 'start', cat: null, areaRet: null });
   if (!OBJ.size && s.mode === 'auto') { s.mode = 'drive'; save(); }
-  const MODE_NAME = { drive: 'Utryckning', prick: 'Pricka gatan', auto: 'Automatlarm', omr: 'Pricka området', orter: 'Pricka orten', duel: 'Duellen', utm: 'Utmaning' };
+  const MODE_NAME = { drive: 'Utryckning', prick: 'Pricka gatan', auto: 'Automatlarm', omr: 'Pricka området', orter: 'Pricka orten', duel: 'Duellen', utm: 'Utmaning', blitz: 'Blixten', one: 'En chans' };
   const pl = prickLike();
   const areaTxt = s.mode === 'omr' ? 'Hela Härnösand' : s.mode === 'orter' ? 'Härnösands kommun' : areaById(s.area).name;
-  const noArea = ['omr', 'orter', 'utm'].includes(s.mode);
+  const noArea = ['omr', 'orter', 'utm', 'blitz', 'one'].includes(s.mode);
   const ut = s.utmType || 'drive'; const utP = ut === 'omr' || ut === 'orter'; const uN = Math.max(1, Math.min(25, s.utmCount || 5));
   const dl = s.duel || (s.duel = { names: ['', ''], rounds: 5 });
   const nCand = candidates(s.area, pl).length;
@@ -1258,6 +1304,8 @@ function wizMenu() {
     </div>` : `<h1>Hur vill du tävla?</h1><div class="wgrid">
       ${card('duel', 'Duellen', 'Två spelare turas om på en telefon', 'duel')}
       ${card('utm', 'Utmaning', 'Skicka en kod, kollegan får samma runda', 'utm')}
+      ${card('blitz', 'Blixten', '5 minuter, 3 liv – hur många adresser hinner du?', 'drive')}
+      ${card('one', 'En chans', 'Ingen tid, men första missen avslutar', 'prick')}
     </div>`;
   } else if (w.step === 'area') {
     const unit = s.mode === 'auto' ? 'objekt' : 'gator';
@@ -1268,9 +1316,10 @@ function wizMenu() {
       <div class="dchips" id="wDist">${DISTRICTS.map(d => { const n = candidates('d:' + d[0], pl).length; const bk = (s.mode === 'auto' ? 'auto_' : '') + 'd:' + d[0]; return n === 0 ? '' : `<button type="button" class="dchip" data-v="d:${d[0]}">${esc(d[1])}<small>${store.roundBest && store.roundBest[bk] ? '★ ' + store.roundBest[bk].pct + ' %' : n}</small></button>`; }).join('')}</div>
     </details>`;
   } else {
-    const SUMW = { drive: 'Peka ut gatan och kör dit från stationen. Du väljer väg i varje korsning.', prick: areaById(s.area).dist ? 'Alla gator i stadsdelen, en i taget. Kartan ligger still och färgerna sitter kvar.' : 'Tio gator i rad. Tryck där gatan ligger, tre försök per gata.', auto: s.autoDrive ? 'Peka ut objektet och kör dit från stationen.' : 'Tio objekt i rad. Tryck där de ligger, tre försök per objekt.', omr: 'Alla områden på en karta. Tryck på rätt prick, två fel och den visas.', orter: 'Alla 20 orter på en karta. Tryck på rätt prick.', duel: 'Samma larm, ni turas om på en telefon. Flest poäng vinner rundan.', utm: utP ? (ut === 'omr' ? 'Alla 36 områden i slumpad ordning. Skicka koden, kollegan får samma ordning.' : 'Alla 20 orter i slumpad ordning. Skicka koden, kollegan får samma ordning.') : `Kör ${uN === 1 ? 'ett larm' : uN + ' larm'} och skicka koden. Den som klistrar in den får samma larm.` };
+    const SUMW = { drive: 'Peka ut gatan och kör dit från stationen. Du väljer väg i varje korsning.', prick: areaById(s.area).dist ? 'Alla gator i stadsdelen, en i taget. Kartan ligger still och färgerna sitter kvar.' : 'Tio gator i rad. Tryck där gatan ligger, tre försök per gata.', auto: s.autoDrive ? 'Peka ut objektet och kör dit från stationen.' : 'Tio objekt i rad. Tryck där de ligger, tre försök per objekt.', omr: 'Alla områden på en karta. Tryck på rätt prick, två fel och den visas.', orter: 'Alla 20 orter på en karta. Tryck på rätt prick.', duel: 'Samma larm, ni turas om på en telefon. Flest poäng vinner rundan.', blitz: 'Larm efter larm i hela Härnösand. Hur många adresser hinner du på fem minuter?', one: 'Larm efter larm i hela Härnösand, utan tidsgräns. Men du har bara en chans.', utm: utP ? (ut === 'omr' ? 'Alla 36 områden i slumpad ordning. Skicka koden, kollegan får samma ordning.' : 'Alla 20 orter i slumpad ordning. Skicka koden, kollegan får samma ordning.') : `Kör ${uN === 1 ? 'ett larm' : uN + ' larm'} och skicka koden. Den som klistrar in den får samma larm.` };
     let inner = '';
-    if (s.mode === 'drive') inner = `${lvlSeg}<div class="swList" style="margin:12px 0">${sw('optLocate', s.locate, 'Peka ut gatan först', 'Tryck på kartan innan du kör. Målet lyser inte under körningen.')}</div>${areaRow}`;
+    if (s.mode === 'blitz' || s.mode === 'one') inner = `<div class="pane"><p class="lead" style="margin:0">${s.mode === 'blitz' ? '• 5 minuter på klockan – klockan uppe till höger räknar ner.<br>• 3 liv. Ge upp eller kör en för lång omväg (under Godkänt, 65 %) så kostar det ett liv.' : '• Ingen tidsgräns.<br>• 1 liv. Ge upp eller kör en för lång omväg (under Godkänt, 65 %) så är rundan över.'}<br>• Hela Härnösand · nivå Bekant · ledtrådar går bra men sänker procenten.</p></div><div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat"><b>${rushBest()[s.mode] || '–'}</b><span>personligt bästa</span></div><div class="stat"><b>${s.mode === 'blitz' ? '5:00' : '♥'}</b><span>${s.mode === 'blitz' ? 'speltid' : 'ett enda liv'}</span></div></div>`;
+    else if (s.mode === 'drive') inner = `${lvlSeg}<div class="swList" style="margin:12px 0">${sw('optLocate', s.locate, 'Peka ut gatan först', 'Tryck på kartan innan du kör. Målet lyser inte under körningen.')}</div>${areaRow}`;
     else if (s.mode === 'auto') inner = `<div class="seg two" id="autoSeg" style="margin-bottom:12px"><button type="button" data-v="1" aria-pressed="${!!s.autoDrive}"><b>Kör dit</b><span>Peka ut och kör</span></button><button type="button" data-v="0" aria-pressed="${!s.autoDrive}"><b>Bara peka ut</b><span>10 objekt i rad</span></button></div>${s.autoDrive ? lvlSeg + `<div class="swList" style="margin:12px 0">${sw('optLocate', s.locate, 'Peka ut objektet först', 'Tryck på kartan innan du kör. Målet lyser inte under körningen.')}</div>` : rec}${areaRow}`;
     else if (s.mode === 'prick') inner = `${rec}${areaRow}`;
     else if (s.mode === 'omr' || s.mode === 'orter') inner = rec;
@@ -1290,9 +1339,9 @@ function wizMenu() {
         <p class="lead" id="utmErr" style="font-size:13px;color:var(--bad);margin:0" hidden></p>
       </div>`;
     body = `<h1>${MODE_NAME[s.mode]}</h1><p class="mSum" style="margin-top:0">${SUMW[s.mode]}</p>${inner}`;
-    const startTxt = s.mode === 'utm' ? 'Skapa utmaning' : s.mode === 'duel' ? 'Starta duellen' : pl ? 'Starta omgång' : 'Starta larm';
-    const footTxt = `${MODE_NAME[s.mode]}${s.mode === 'utm' ? ' · ' + (utP ? (ut === 'omr' ? 'Pricka området' : 'Pricka orten') : uN + (uN === 1 ? ' adress' : ' adresser')) : ''} · ${s.mode === 'utm' && utP ? (ut === 'omr' ? 'Hela Härnösand' : 'Härnösands kommun') : areaTxt}${pl || (s.mode === 'utm' && utP) || s.mode === 'omr' || s.mode === 'orter' ? '' : ' · ' + LEVELS[s.level - 1].name}`;
-    const ok = nCand || (s.mode === 'utm' && utP);
+    const startTxt = s.mode === 'utm' ? 'Skapa utmaning' : s.mode === 'duel' ? 'Starta duellen' : s.mode === 'blitz' ? 'Starta Blixten' : s.mode === 'one' ? 'Starta En chans' : pl ? 'Starta omgång' : 'Starta larm';
+    const footTxt = s.mode === 'blitz' ? 'Blixten · Hela Härnösand · Bekant' : s.mode === 'one' ? 'En chans · Hela Härnösand · Bekant' : `${MODE_NAME[s.mode]}${s.mode === 'utm' ? ' · ' + (utP ? (ut === 'omr' ? 'Pricka området' : 'Pricka orten') : uN + (uN === 1 ? ' adress' : ' adresser')) : ''} · ${s.mode === 'utm' && utP ? (ut === 'omr' ? 'Hela Härnösand' : 'Härnösands kommun') : areaTxt}${pl || (s.mode === 'utm' && utP) || s.mode === 'omr' || s.mode === 'orter' ? '' : ' · ' + LEVELS[s.level - 1].name}`;
+    const ok = nCand || (s.mode === 'utm' && utP) || s.mode === 'blitz' || s.mode === 'one';
     foot = `<div class="menuFoot"><div class="footSum">${footTxt}</div><button class="primary" id="wStart" ${ok ? '' : 'disabled'}>${ok ? startTxt : 'Inget att öva på här'}</button></div>`;
   }
   showSheet(`<div class="mScroll" id="mScroll"><div class="wizTop">${w.step === 'start' ? '' : '<button type="button" class="wback" id="wizBack" aria-label="Tillbaka">‹</button>'}<span class="eyebrow">${esc(crumb)}</span></div>${body}</div>${foot}`);
@@ -1306,7 +1355,7 @@ function wizMenu() {
   };
   sheet.querySelectorAll('.wgrid .wcard, #wDist .dchip').forEach(b => b.onclick = () => { const v = b.dataset.v;
     if (w.step === 'start') { if (v === 'drive') { s.mode = 'drive'; save(); w.cat = null; w.step = 'area'; } else { w.cat = v; w.step = 'cat'; } }
-    else if (w.step === 'cat') { s.mode = v; save(); w.step = (v === 'omr' || v === 'orter' || v === 'utm') ? 'final' : 'area'; }
+    else if (w.step === 'cat') { s.mode = v; save(); w.step = (v === 'omr' || v === 'orter' || v === 'utm' || v === 'blitz' || v === 'one') ? 'final' : 'area'; }
     else if (w.step === 'area') { s.area = v; save(); w.step = 'final'; w.areaRet = null; }
     menu(); });
   const on = (id, fn) => { const el = $(id); if (el) el.onchange = fn; };
@@ -1330,13 +1379,13 @@ function wizMenu() {
   if ($('#utmName')) $('#utmName').onchange = (e) => { s.utmName = e.target.value.trim(); save(); };
   if ($('#utmPlay')) $('#utmPlay').onclick = () => { s.utmName = $('#utmName').value.trim(); save(); const r = chalParse($('#utmCode').value); if (typeof r === 'string') { $('#utmErr').textContent = r; $('#utmErr').hidden = false; return; } chalStart(r); };
   const dt = sheet.querySelector('details.dists'); if (dt) dt.ontoggle = () => { state.distOpen = dt.open; };
-  const ws = $('#wStart'); if (ws) ws.onclick = (ev) => { const b = ev.currentTarget; if (b.disabled || state.starting) return; state.starting = true; b.disabled = true; b.classList.add('busy'); setTimeout(() => { state.starting = false; if (b.isConnected) { b.disabled = false; b.classList.remove('busy'); } }, 900); s.mode === 'utm' ? chalCreate() : s.mode === 'duel' ? startDuel() : pl ? startPrick() : startAlarm(); };
+  const ws = $('#wStart'); if (ws) ws.onclick = (ev) => { const b = ev.currentTarget; if (b.disabled || state.starting) return; state.starting = true; b.disabled = true; b.classList.add('busy'); setTimeout(() => { state.starting = false; if (b.isConnected) { b.disabled = false; b.classList.remove('busy'); } }, 900); s.mode === 'utm' ? chalCreate() : s.mode === 'duel' ? startDuel() : s.mode === 'blitz' || s.mode === 'one' ? rushStart(s.mode) : pl ? startPrick() : startAlarm(); };
   if (state.menuScroll) { $('#mScroll').scrollTop = state.menuScroll; state.menuScroll = 0; }
 }
 
 function menu() {
   state.modeOverride = null; state.starting = false; setBrightMap(false); $('#attrib').textContent = 'Kartdata © OpenStreetMap-bidragsgivare';
-  resetMenuTop(); cancelAnimationFrame(revealAnim); state.duel = null; state.chal = null;
+  resetMenuTop(); cancelAnimationFrame(revealAnim); state.duel = null; state.chal = null; state.rush = null; clearInterval(rushTimer);
   state.gen = (state.gen || 0) + 1; cancelAnimationFrame(anim); state.choosing = false; state.drawPts = null; state.showTarget = false; state.autoRun = 0; state.stopNext = false; state.resetArm = false;
   state.round = null; state.mode = 'menu'; state.car = null; state.trailPath = null; state.optPath = null; state.targetPath = null; state.marks = []; state.labels = true;
   $('#hud').hidden = true; $('#controls').hidden = true; $('#editActs').hidden = true; $('#rdActs').hidden = true; $('#stopBtn').hidden = true; $('#choices').innerHTML = ''; $('#compass').hidden = true; state.editing = null;
@@ -1347,6 +1396,7 @@ function menu() {
   const avg = store.runs ? Math.round(store.effSum / store.runs) + ' %' : '–';
   const MODES = [['drive', 'Utryckning', 'Kör från stationen'], ['prick', 'Pricka gatan', 'Tryck på kartan'], ['auto', 'Automatlarm', 'Stationens objekt'], ['omr', 'Pricka området', 'Prickar på kartan'], ['orter', 'Pricka orten', 'Byar runt stan'], ['duel', 'Duellen', '2 spelare'], ['utm', 'Utmaning', 'Skicka en kod till en kollega']];
   if (!OBJ.size) { const k = MODES.findIndex(m => m[0] === 'auto'); if (k >= 0) MODES.splice(k, 1); if (s.mode === 'auto') { s.mode = 'drive'; save(); } }
+  if (s.mode === 'blitz' || s.mode === 'one') { s.mode = 'drive'; save(); }
   const SUM = { drive: 'Peka ut gatan och kör dit från stationen. Du väljer väg i varje korsning.', prick: isDist ? 'Alla gator i stadsdelen, en i taget. Kartan ligger still och färgerna sitter kvar.' : 'Tio gator i rad. Tryck där gatan ligger, tre försök per gata.', auto: s.autoDrive ? 'Peka ut objektet och kör dit från stationen.' : 'Tio objekt i rad. Tryck där de ligger, tre försök per objekt.', omr: 'Alla områden på en karta. Tryck på rätt prick, två fel och den visas.', orter: 'Alla 20 orter på en karta. Tryck på rätt prick.', duel: 'Samma larm, ni turas om på en telefon. Flest poäng vinner rundan.', utm: ut === 'omr' ? 'Alla 36 områden i slumpad ordning. Skicka koden, kollegan får samma ordning.' : ut === 'orter' ? 'Alla 20 orter i slumpad ordning. Skicka koden, kollegan får samma ordning.' : `Kör ${uN === 1 ? 'ett larm' : uN + ' larm'} och skicka koden. Den som klistrar in den får samma larm.` };
   const unit = s.mode === 'auto' ? 'objekt' : s.mode === 'omr' ? 'områden' : s.mode === 'orter' ? 'orter' : 'gator';
   const advOpen = state.advOpen || s.lm === false || s.autoStraight === true;
@@ -1538,14 +1588,14 @@ function startAlarm(fixed) {
   state.targetPath = streetPath(t.name); state.showTarget = false; state.targetColor = null;
   state.opt = CORE.fastestTo(G, G.station, t.name);
   const showAddr = t.obj && level() <= 2;
-  $('#alarmType').classList.remove('score');
-  $('#alarmType').textContent = (state.duel ? duelName(state.duel.turn) + ' · ' : state.chal ? 'Utmaning ' + (state.chal.idx + 1) + ' av ' + state.chal.targets.length + ' · ' : '') + 'Larm · ' + state.incident + (showAddr ? ' · ' + t.addr : ''); $('#alarmStreet').textContent = dispName(t.name);
+  $('#alarmType').classList.toggle('score', !!state.rush);
+  $('#alarmType').textContent = (state.rush ? '\u2665'.repeat(state.rush.lives) + ' \u00b7 ' + state.rush.count + ' klarade \u00b7 ' : '') + (state.duel ? duelName(state.duel.turn) + ' · ' : state.chal ? 'Utmaning ' + (state.chal.idx + 1) + ' av ' + state.chal.targets.length + ' · ' : '') + 'Larm · ' + state.incident + (showAddr ? ' · ' + t.addr : ''); $('#alarmStreet').textContent = dispName(t.name);
   $('#hud').hidden = false; $('#clock').textContent = '0:00'; $('#clock').classList.remove('over');
   $('#alarm').classList.remove('flash'); void $('#alarm').offsetWidth; $('#alarm').classList.add('flash');
   if (t.obj) say(`Larm. Automatlarm. ${t.oname}.${showAddr ? ' ' + t.addr + '.' : ''} Jag upprepar, ${t.oname}.`);
   else say(`Larm. ${state.incident}. ${t.name}. Jag upprepar, ${t.name}.`);
   hideSheet();
-  state.usedLocate = !!(state.chal ? state.chal.loc : store.settings.locate);
+  state.usedLocate = !!state.rush ? false : !!(state.chal ? state.chal.loc : store.settings.locate);
   if (state.usedLocate) startLocate(); else startDrive();
 }
 
@@ -2178,7 +2228,7 @@ let anim = null;
 let menuArm = null;
 function resetMenuTop() { clearTimeout(menuArm); menuArm = null; const b = $('#menuTop'); b.classList.remove('armed'); b.innerHTML = '‹<b>Meny</b>'; }
 $('#menuTop').onclick = () => {
-  const playing = ['locate', 'drive', 'locateDone'].includes(state.mode) || (state.round && state.mode !== 'prickDone') || (state.duel && !state.duel.done) || (state.chal && !state.chal.done);
+  const playing = ['locate', 'drive', 'locateDone'].includes(state.mode) || (state.round && state.mode !== 'prickDone') || (state.duel && !state.duel.done) || (state.chal && !state.chal.done) || (state.rush && !state.rush.done);
   if (playing && !menuArm) { const b = $('#menuTop'); b.classList.add('armed'); b.innerHTML = 'Avsluta?<b>tryck igen</b>'; menuArm = setTimeout(resetMenuTop, 2500); return; }
   resetMenuTop();
   if (state.mode === 'edit' || state.mode === 'objPlace' || state.mode === 'lmPlace' || state.mode === 'lmDel' || state.mode === 'roadDraw') { state.drawPts = null; editList(); } else menu();
@@ -2194,7 +2244,7 @@ function startDrive() {
   state.limit = level() === 4 ? state.opt.time * 1.6 + 20 : Infinity;
   state.hintLevel = 0; state.hintCost = 0; state.showCompass = false; state.showNext = false; state.gaveUp = false; state.autoFrom = null; state.autoPath = null;
   $('#hintActs').hidden = false; $('#locActs').hidden = true; updateHintBtn(); disarmGiveUp();
-  $('#phase').textContent = 'körtid'; $('#clock').textContent = '0:00';
+  $('#phase').textContent = state.rush && state.rush.kind === 'blitz' ? 'kvar' : 'körtid'; if (!state.rush || state.rush.kind !== 'blitz') $('#clock').textContent = '0:00';
   $('#controls').hidden = false; $('#uturn').hidden = false;
   view.scale = state.userZoom || Math.min(W, H) / 420; view.anchorY = 0.62; view.cx = n.x; view.cy = n.y;
   view.rot = -Math.PI / 2 - state.car.h;
@@ -2424,7 +2474,9 @@ function go(step) {
     state.car.x = x; state.car.y = y; state.car.h = h; view.cx = x; view.cy = y;
     { let target = -Math.PI / 2 - h, dr = target - view.rot; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI; view.rot += dr * 0.15; }
     state.simTime = baseTime + e.t * tFrac * f;
-    const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.toggle('over', shown > state.limit);
+    const shown = state.simTime + state.penalty;
+    if (state.rush && state.rush.kind === 'blitz') { const left = Math.max(0, state.rush.deadline - performance.now()) / 1000; $('#clock').textContent = fmt(left); $('#clock').classList.toggle('over', left < 30); }
+    else { $('#clock').textContent = fmt(shown); $('#clock').classList.toggle('over', shown > state.limit); }
     state.trailPath = stepsPath(prevSteps, pts.slice(0, i).concat([[x, y]]));
     draw();
     if (f < 1) anim = requestAnimationFrame(tick); else if (final) { arrive(); } else { state.node = step.to; atNode(); }
@@ -2481,6 +2533,7 @@ function arrive() {
   const named = [...new Set(state.myList.filter(s => !s.unnamed && s.name !== state.target).map(s => s.name))];
   if (state.duel) return duelAfterRun();
   if (state.chal) return chalAfterRun();
+  if (state.rush) return rushAfterRun();
   if (level() >= 3 && named.length >= 2 && !state.gaveUp) showRecall(named); else showResult();
 }
 function showRecall(named) {
@@ -2555,7 +2608,7 @@ resize();
 if (BOARD_ON && !store.player) nameGate(menu); else menu();
 try { if (sessionStorage.getItem('uh-open-editor')) { sessionStorage.removeItem('uh-open-editor'); store.settings.mode = 'auto'; editList(); } } catch (e) {}
 setInterval(() => { if (state.mode === 'drive' && state.choosing) draw(); }, 260);
-if (location.hash === '#dbg' || location.hash === '#dbgw') window.__uh = { view, draw, get G() { return G; }, state, hideSheet, duelFinal, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu };
+if (location.hash === '#dbg' || location.hash === '#dbgw') window.__uh = { view, draw, get G() { return G; }, state, hideSheet, duelFinal, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu, rushStart: (k) => rushStart(k), rushEnd: (w) => rushEnd(w) };
 })();
 </script>
 
