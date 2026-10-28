@@ -2174,19 +2174,25 @@ function placeChoices() {
   // Pilen pekar mot där vägen faktiskt går på skärmen, inte bara åt vilket håll den börjar
   const along = (s) => { const pts = CORE.stepPts(G, s); let last = null; for (const p of pts) { const [px, py] = w2s(p[0], p[1]); const d = Math.hypot(px - cx, py - cy); if (d > 6) last = [px, py]; if (d >= R * 0.8) break; } return last ? Math.atan2(last[1] - cy, last[0] - cx) : CORE.stepHeading(G, s, 30) + view.rot; };
   let angs = state.exits.map(along);
-  // sprid ut knappar som ligger för nära varandra
+  // Knappar som ska ligga på själva vägen (t.ex. Mot Coop): räkna ut plats och pilriktning först
+  const pinned = state.exits.map(ex => {
+    if (!ex || !ex.pin) return null;
+    const chain = ex.path.slice(); for (let k = 0; k < 6; k++) { const l = chain[chain.length - 1]; const nx = CORE.exitsFrom(G, l.to, l.e); if (nx.length !== 1) break; chain.push(nx[0]); }
+    const pts = []; for (const st of chain) { const q = CORE.stepPts(G, st); pts.push(...(pts.length ? q.slice(1) : q)); }
+    let acc = 0;
+    for (let k = 1; k < pts.length; k++) { const L = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); const [ox, oy] = w2s(pts[k - 1][0], pts[k - 1][1]); const [qx, qy] = w2s(pts[k][0], pts[k][1]);
+      for (let m = 0; m <= L; m += 2) { const t = L ? m / L : 1; const px = ox + (qx - ox) * t, py = oy + (qy - oy) * t; if (acc + m >= ex.pin || (k === pts.length - 1 && m + 2 > L)) { const rot = Math.atan2(qy - oy, qx - ox); const D = R + 95; const side = Math.sign(Math.cos(rot) * (py - cy) - Math.sin(rot) * (px - cx)) || 1; return { x: cx + Math.cos(rot) * D - Math.sin(rot) * 22 * side, y: cy + Math.sin(rot) * D + Math.cos(rot) * 22 * side, rot }; } }
+      acc += L; }
+    return null;
+  });
+  // en knapp som ligger på vägen sitter längre ut än de andra och räknas inte med när de sprids ut
+  // sprid ut knappar som ligger för nära varandra (en knapp som ligger på vägen flyttas inte)
   const SEP = document.querySelector('#choices .lbl') ? 0.95 : 0.6;
-  const idx = angs.map((a, i) => i).sort((i, j) => angs[i] - angs[j]);
-  for (let k = 0; k < 3; k++) for (let m = 0; m < idx.length; m++) { const i = idx[m], j = idx[(m + 1) % idx.length]; if (i === j) continue; let d = angs[j] - angs[i]; while (d < 0) d += Math.PI * 2; if (d < SEP && idx.length > 1) { const push = (SEP - d) / 2; angs[i] -= push; angs[j] += push; } }
+  const idx = angs.map((a, i) => i).filter(i => !pinned[i]).sort((i, j) => angs[i] - angs[j]);
+  for (let k = 0; k < 4; k++) for (let m = 0; m < idx.length; m++) { const i = idx[m], j = idx[(m + 1) % idx.length]; if (i === j) continue; let d = angs[j] - angs[i]; while (d < 0) d += Math.PI * 2; if (d < SEP && idx.length > 1) { const push = SEP - d; if (pinned[i]) angs[j] += push; else if (pinned[j]) angs[i] -= push; else { angs[i] -= push / 2; angs[j] += push / 2; } } }
   btns.forEach((b, i) => {
     let a = angs[i]; let x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R;
-    const ex = state.exits[i];
-    if (ex && ex.pin) { // knappen ligger på vägen, en bit in, och pilen följer vägens riktning där
-      const chain = ex.path.slice(); for (let k = 0; k < 6; k++) { const l = chain[chain.length - 1]; const nx = CORE.exitsFrom(G, l.to, l.e); if (nx.length !== 1) break; chain.push(nx[0]); }
-      const pts = []; for (const st of chain) { const q = CORE.stepPts(G, st); pts.push(...(pts.length ? q.slice(1) : q)); }
-      let acc = 0, done = false; for (let k = 1; k < pts.length && !done; k++) { const L = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); const [ox, oy] = w2s(pts[k - 1][0], pts[k - 1][1]); const [qx, qy] = w2s(pts[k][0], pts[k][1]);
-        for (let m = 0; m <= L; m += 2) { const t = L ? m / L : 1; const px = ox + (qx - ox) * t, py = oy + (qy - oy) * t; if ((acc + m >= ex.pin && Math.hypot(px - cx, py - cy) >= R * 1.75) || (k === pts.length - 1 && m + 2 > L)) { x = px; y = py; a = Math.atan2(qy - oy, qx - ox); done = true; break; } } acc += L; }
-    }
+    if (pinned[i]) { x = pinned[i].x; y = pinned[i].y; a = pinned[i].rot; }
     x = Math.max(40, Math.min(W - 40, x)); const hintTop = ($('#controls').getBoundingClientRect().top || H) - $('#app').getBoundingClientRect().top; y = Math.max(120, Math.min(Math.min(H - 90, hintTop - 34), y));
     b.style.left = x + 'px'; b.style.top = y + 'px';
     const svg = b.querySelector('svg'); if (svg) svg.style.transform = `rotate(${(a + Math.PI / 2)}rad)`;
