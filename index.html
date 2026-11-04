@@ -287,7 +287,7 @@ p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 .mScroll{min-width:0}
 .footSum{display:none}
 @media (min-width:768px){
-  .sheet.menuSheet{width:min(900px,calc(100vw - 48px));max-width:none;max-height:min(92%,calc(100vh - 48px));border-radius:var(--r-lg)}
+  .sheet.menuSheet{width:min(900px,calc(100vw - 48px));max-width:none;max-height:min(92%,calc(100vh - 48px));max-height:min(92%,calc(100dvh - 48px));border-radius:var(--r-lg)}
   .mScroll{padding:20px 24px 20px}
   .menuFoot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 24px 14px}
   .menuFoot .primary{width:auto;min-width:300px;padding-left:32px;padding-right:32px}
@@ -1094,7 +1094,7 @@ let brightOn = false;
 // ---------- Flygfoto: Lantmäteriets ortofoto (CC BY 4.0), 2025 (stan) och 2024 (norrut), som kartrutor i spelets koordinater ----------
 // Rutorna ligger på jackenilsson.github.io/utryckning/orto/{nivå}/{tx}_{ty}.webp; nivå 0 = 0,32 m/px, varje nivå dubblar.
 // Nybron (nya bron klar 2025) är inritad i fotot, och gamla tillfälliga bron och brobygget är bortmålade.
-const ORTO = { base: 'https://jackenilsson.github.io/utryckning/orto/', res0: 0.3199795213106361, ts: 256, levels: 7, idx: null, idxState: 0, tiles: new Map(), max: 900, frame: 0, flushT: null };
+const ORTO = { base: 'https://jackenilsson.github.io/utryckning/orto/', res0: 0.3199795213106361, ts: 256, levels: 7, idx: null, idxState: 0, tiles: new Map(), max: 400, frame: 0, flushT: null };
 function ortoOn() { return ORTO.idxState === 1 && !brightOn; }
 function ortoInit() {
   if (ORTO.idxState) return; ORTO.idxState = 3; // hämtar
@@ -1125,13 +1125,17 @@ function ortoTile(k, tx, ty) {
   }
   t.use = ORTO.frame; return t;
 }
-function ortoFlush() { if (ORTO.flushT) return; ORTO.flushT = setTimeout(() => { ORTO.flushT = null; if (base && base.orto && !baseDirty) { ortoPaint(base.sc, base.cdpr, base.bx0, base.by0, base.ws); baseFromOrto(base.sc, base.cdpr, base.bx0, base.by0, base.ws); requestDraw(); } else { baseDirty = true; requestDraw(); } }, 150); }
-// Bakgrundsbufferten = fotolagret + vägnätet ovanpå (en ogenomskinlig bild: billig att rita varje bildruta)
-function baseFromOrto(sc, cdpr, bx0, by0, ws) {
-  const g = bctx; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(ortoCv, 0, 0);
-  g.setTransform(cdpr * sc, 0, 0, cdpr * sc, -bx0 * cdpr * sc, -by0 * cdpr * sc);
-  VIS = [bx0, by0, bx0 + ws, by0 + ws]; ORTO_DRAW = true; try { drawStatic(g, sc); } finally { VIS = null; ORTO_DRAW = false; }
+// Nya fotorutor har laddats: måla bara in dem i fotolagret och lägg ihop lagren igen. Vägnätet ritas inte om
+// (det ligger i ett eget lager, roadCv), så det här kostar nästan inget även mitt under körning.
+function ortoFlush() { if (ORTO.flushT) return; ORTO.flushT = setTimeout(() => { ORTO.flushT = null; if (base && base.orto && !baseDirty) { const b = base; drawOrto(octx, b.cdpr * b.sc, b.bx0, b.by0, b.bx0 + b.ws, b.by0 + b.ws); composeBase(); requestDraw(); } else { baseDirty = true; requestDraw(); } }, 150); }
+// Vägnätet ovanpå fotot, i ett genomskinligt lager med samma storlek som fotolagret
+function paintRoadsLayer(sc, cdpr, bx0, by0, ws) {
+  roadCv.width = ortoCv.width; roadCv.height = ortoCv.height;
+  const r = rctx; r.setTransform(cdpr * sc, 0, 0, cdpr * sc, -bx0 * cdpr * sc, -by0 * cdpr * sc);
+  VIS = [bx0, by0, bx0 + ws, by0 + ws]; ORTO_DRAW = true; try { drawStatic(r, sc); } finally { VIS = null; ORTO_DRAW = false; }
 }
+// Bakgrundsbufferten = fotolagret + väglagret (en ogenomskinlig bild: billig att rita varje bildruta)
+function composeBase() { const g = bctx; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(ortoCv, 0, 0); g.drawImage(roadCv, 0, 0); }
 // Saknas någon fotoruta i rutan (utanför täckningen)? Då ritas den ritade kartan under fotot.
 function ortoGaps(ppm, x0, y0, x1, y1) {
   let k = Math.floor(Math.log2(1 / ppm / ORTO.res0) + 0.3); k = Math.max(0, Math.min(ORTO.levels - 1, k)); const T = ORTO.ts * ORTO.res0 * Math.pow(2, k);
@@ -1140,7 +1144,7 @@ function ortoGaps(ppm, x0, y0, x1, y1) {
 }
 // Fotolagret: markfärg, ritad karta där fotot saknas, sedan fotorutorna
 function ortoPaint(sc, cdpr, bx0, by0, ws) {
-  const o = octx; ortoCv.width = Math.round(ws * sc * cdpr); ortoCv.height = ortoCv.width;
+  const o = octx; const pw = Math.round(ws * sc * cdpr); if (ortoCv.width !== pw || ortoCv.height !== pw) { ortoCv.width = pw; ortoCv.height = pw; } else { o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, pw, pw); }
   o.setTransform(cdpr * sc, 0, 0, cdpr * sc, -bx0 * cdpr * sc, -by0 * cdpr * sc);
   o.fillStyle = C.land; o.fillRect(bx0, by0, ws, ws);
   if (ortoGaps(cdpr * sc, bx0, by0, bx0 + ws, by0 + ws)) { VIS = [bx0, by0, bx0 + ws, by0 + ws]; ORTO_DRAW = false; try { drawStatic(o, sc); } finally { VIS = null; } }
@@ -1240,7 +1244,8 @@ function goalPath(steps) { if (!steps.length) return stepsPath(steps); const las
 // ---------- Vy ----------
 let W = 0, H = 0, DPR = 1;
 const view = { cx: SX, cy: SY, scale: 1, rot: 0, anchorY: 0.5 };
-function resize() { DPR = Math.min(window.devicePixelRatio || 1, 2); baseDirty = true; W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); requestDraw(); }
+// Safari på iPhone skickar resize när adressfältet fälls in och när tangentbordet öppnas: rita bara om när storleken verkligen ändrats
+function resize() { const nd = Math.min(window.devicePixelRatio || 1, 2), nw = canvas.clientWidth, nh = canvas.clientHeight; if (nd === DPR && nw === W && nh === H && canvas.width) return; DPR = nd; W = nw; H = nh; canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); baseDirty = true; state._cmpRects = null; requestDraw(); }
 window.addEventListener('resize', resize);
 function w2s(x, y) { const dx = x - view.cx, dy = y - view.cy, c = Math.cos(view.rot), s = Math.sin(view.rot); return [W / 2 + (dx * c - dy * s) * view.scale, H * view.anchorY + (dx * s + dy * c) * view.scale]; }
 function s2w(px, py) { const X = (px - W / 2) / view.scale, Y = (py - H * view.anchorY) / view.scale, c = Math.cos(-view.rot), s = Math.sin(-view.rot); return [view.cx + X * c - Y * s, view.cy + X * s + Y * c]; }
@@ -1259,10 +1264,11 @@ function fitBounds(pts, pad = 60, topPad = 90, botPad = 90, leftPad = 0) {
 }
 
 // ---------- Ritning ----------
-let drawQueued = false; let revealAnim = null;
+let drawQueued = false, drawReq = 0; let revealAnim = null;
 // Bakgrundskartan (land, vatten, hus, vägar) ritas en gång till en egen bild och återanvänds tills man zoomar eller kommer nära kanten.
 const baseCv = document.createElement('canvas'); const bctx = baseCv.getContext('2d');
 const ortoCv = document.createElement('canvas'); const octx = ortoCv.getContext('2d');
+const roadCv = document.createElement('canvas'); const rctx = roadCv.getContext('2d');
 let base = null, baseDirty = true, baseTimer = null, ORTO_DRAW = false;
 function renderBase(sc, quick) {
   // Prestanda (2 nov 2026): mindre bakgrundsbild (1,55 i stället för 1,9 gånger skärmdiagonalen, högst 1,5 pixlar per punkt).
@@ -1270,12 +1276,15 @@ function renderBase(sc, quick) {
   // skickas till grafikkortet blir ungefär en tredjedel så stor (det var den som fick spelet att hacka).
   const diag = Math.hypot(W, H); const side = 2 * screenR() * 1.02 + diag * (state.mode === 'drive' ? 0.55 : 0.45); const maxPx = 3072;
   let cdpr = Math.min(DPR, 1.5, maxPx / side); if (quick) cdpr = Math.min(cdpr, 1);
-  const ws = side / sc; const bx0 = view.cx - ws / 2, by0 = view.cy - ws / 2;
-  baseCv.width = Math.round(side * cdpr); baseCv.height = Math.round(side * cdpr);
+  const ws = side / sc;
+  // Under körning läggs bakgrunden en bit framför bilen (i körriktningen), så att den räcker längre innan den måste ritas om
+  let ox = 0, oy = 0; if (state.mode === 'drive' && state.car && isFinite(state.car.h)) { ox = Math.cos(state.car.h) * ws * 0.14; oy = Math.sin(state.car.h) * ws * 0.14; }
+  const bx0 = view.cx + ox - ws / 2, by0 = view.cy + oy - ws / 2;
+  const bpw = Math.round(side * cdpr); if (baseCv.width !== bpw || baseCv.height !== bpw) { baseCv.width = bpw; baseCv.height = bpw; } else { bctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, bpw, bpw); }
   const g = bctx; g.setTransform(cdpr * sc, 0, 0, cdpr * sc, -bx0 * cdpr * sc, -by0 * cdpr * sc);
   const orto = ortoOn() && sc >= 0.03;
   // Med flygfoto ligger fotot i ett eget lager (ortoCv) så att nya rutor kan målas in utan att vägnätet ritas om
-  if (orto) { ortoPaint(sc, cdpr, bx0, by0, ws); baseFromOrto(sc, cdpr, bx0, by0, ws); }
+  if (orto) { ortoPaint(sc, cdpr, bx0, by0, ws); paintRoadsLayer(sc, cdpr, bx0, by0, ws); composeBase(); }
   else { g.fillStyle = C.land; g.fillRect(bx0, by0, ws, ws); VIS = [bx0, by0, bx0 + ws, by0 + ws]; ORTO_DRAW = false; try { drawStatic(g, sc); } finally { VIS = null; } }
   base = { sc, cdpr, bx0, by0, ws, key: C.land, quick: !!quick, pw: baseCv.width, orto }; baseDirty = false;
 }
@@ -1287,8 +1296,9 @@ function baseFits() {
   const r = screenR() / view.scale * 1.02; const m = base.ws / 2;
   return Math.abs(view.cx - (base.bx0 + m)) + r <= m && Math.abs(view.cy - (base.by0 + m)) + r <= m;
 }
-function requestDraw() { if (!drawQueued) { drawQueued = true; requestAnimationFrame(() => { drawQueued = false; draw(); }); } }
+function requestDraw() { if (!drawQueued) { drawQueued = true; drawReq = requestAnimationFrame(() => { drawQueued = false; draw(); }); } }
 function draw() {
+  if (drawQueued) { cancelAnimationFrame(drawReq); drawQueued = false; } // ritas direkt (körningen): den köade ritningen behövs inte
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = C.land; ctx.fillRect(0, 0, W, H);
   ctx.save();
@@ -1425,13 +1435,17 @@ function drawLandmarks() {
     }
   }
 }
+const LABEL_W = new Map(); // textbredd per gatunamn (måtten ändras inte)
 function drawLabels() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.font = '600 13px Barlow, Segoe UI, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   ctx.lineJoin = 'round';
-  const placed = [];
+  const placed = []; const vr = screenR() / view.scale; const vx0 = view.cx - vr, vx1 = view.cx + vr, vy0 = view.cy - vr, vy1 = view.cy + vr;
   for (const st of G.streets.values()) {
     if (st.obj) continue;
+    // gatans ruta i världen räknas en gång; gator helt utanför skärmen hoppas över direkt
+    if (!st.bb) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const id of st.edges) for (const p of G.edges[id].pts) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; } st.bb = [x0, y0, x1, y1]; }
+    if (st.bb[2] < vx0 || st.bb[0] > vx1 || st.bb[3] < vy0 || st.bb[1] > vy1) continue;
     let best = null, bl = 0;
     for (const id of st.edges) {
       const e = G.edges[id];
@@ -1442,8 +1456,9 @@ function drawLabels() {
         if (l > bl) { bl = l; best = [a, b, mx, my]; }
       }
     }
-    const tw = ctx.measureText(st.name).width;
-    if (!best || bl < Math.min(tw * .7, 90)) continue;
+    if (!best) continue;
+    let tw = LABEL_W.get(st.name); if (tw == null) { tw = ctx.measureText(st.name).width; LABEL_W.set(st.name, tw); }
+    if (bl < Math.min(tw * .7, 90)) continue;
     const [a, b, mx, my] = best; let ang = Math.atan2(b[1] - a[1], b[0] - a[0]); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
     const r = tw / 2 + 6; if (placed.some(p => Math.hypot(p[0] - mx, p[1] - my) < r + p[2])) continue;
     placed.push([mx, my, r]);
@@ -2731,7 +2746,7 @@ function startAlarm(fixed) {
   const showAddr = t.obj && level() <= 2 && !!t.addr;
   $('#alarmType').classList.toggle('score', !!state.rush);
   $('#alarmType').textContent = (state.chal ? 'Utmaning ' + (state.chal.idx + 1) + ' av ' + state.chal.targets.length + ' · ' : '') + 'Larm · ' + state.incident + (showAddr ? ' · ' + t.addr : ''); $('#alarmStreet').textContent = dispName(t.name);
-  $('#hud').hidden = false; $('#clock').textContent = '0:00'; $('#clock').classList.remove('over');
+  $('#hud').hidden = false; $('#clock').textContent = '0:00'; state._clockTxt = '0:00'; $('#clock').classList.remove('over');
   $('#alarm').classList.remove('flash'); void $('#alarm').offsetWidth; $('#alarm').classList.add('flash');
   if (t.obj) sayParts(['Larm.', 'Automatlarm.', t.oname + '.', showAddr ? t.addr + '.' : '', 'Jag upprepar:', t.oname + '.']);
   else sayParts(['Larm.', state.incident + '.', t.name + '.', 'Jag upprepar:', t.name + '.']);
@@ -3743,7 +3758,7 @@ function go(step) {
   const ease = final && !reduce; const F0 = 0.6, SPD = 2 / (1 + F0);
   const prog = (f) => !ease ? f : f <= F0 ? SPD * f : SPD * F0 + SPD * (f - F0) - SPD * (f - F0) * (f - F0) / (2 * (1 - F0));
   const baseTime = state.simTime; const t0 = performance.now(); const dur = reduce ? 150 : (total / vis) * 1000 * (ease ? SPD : 1);
-  const prevSteps = state.steps.slice(0, -1);
+  const prevSteps = state.steps.slice(0, -1); const prevPath = stepsPath(prevSteps);
   setHint(state.gaveUp ? 'Spelet visar vägen' + `<small>${e.name ? esc(e.name) : 'Kör…'}</small>` : (level() <= 1 && e.name ? esc(e.name) : 'Kör…') + `<small>${Math.round(e.len)} m</small>`);
   cancelAnimationFrame(anim);
   const tick = (now) => {
@@ -3755,8 +3770,8 @@ function go(step) {
     state.car.x = x; state.car.y = y; state.car.h = h; view.cx = x; view.cy = y;
     { let target = -Math.PI / 2 - h, dr = target - view.rot; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI; view.rot += dr * 0.15; }
     state.simTime = baseTime + e.t * tFrac * f;
-    const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.remove('over');
-    state.trailPath = stepsPath(prevSteps, pts.slice(0, i).concat([[x, y]]));
+    const shown = fmt(state.simTime + state.penalty); if (shown !== state._clockTxt) { state._clockTxt = shown; $('#clock').textContent = shown; }
+    { const tp = new Path2D(prevPath); for (let k = 0; k < i; k++) tp.lineTo(pts[k][0], pts[k][1]); tp.lineTo(x, y); state.trailPath = tp; }
     draw();
     if (f < 1) anim = requestAnimationFrame(tick); else if (final) { arrivePause(); } else { state.node = step.to; atNode(); }
   };
@@ -3770,11 +3785,16 @@ function placeCompass() {
   const [tx, ty] = w2s(best[0], best[1]);
   const [cx, cy] = w2s(state.car.x, state.car.y); const a = Math.atan2(ty - cy, tx - cx);
   // Synligt kartområde: mäts på riktigt (under larmrutan – som flyttas ner av notch/ö i appläget – och ovanför ledtrådsrutan)
-  const appR = $('#app').getBoundingClientRect();
-  const hudR = $('#hud').getBoundingClientRect(), hintR = $('#hint').getBoundingClientRect();
-  const ub = document.getElementById('updBar'); const ubR = ub && !ub.hidden ? ub.getBoundingClientRect() : null;
-  const colE = $('#controls .btnrow'); const colR = colE ? colE.getBoundingClientRect() : null;
-  box.hidden = false; const bw = box.offsetWidth || 90, bh = box.offsetHeight || 28;
+  box.hidden = false;
+  let CR = state._cmpRects; const now = performance.now();
+  if (!CR || now - CR.t > 400 || CR.W !== W || CR.H !== H) {
+    const appR = $('#app').getBoundingClientRect();
+    const hudR = $('#hud').getBoundingClientRect(), hintR = $('#hint').getBoundingClientRect();
+    const ub = document.getElementById('updBar'); const ubR = ub && !ub.hidden ? ub.getBoundingClientRect() : null;
+    const colE = $('#controls .btnrow'); const colR = colE ? colE.getBoundingClientRect() : null;
+    CR = state._cmpRects = { t: now, W, H, appR, hudR, hintR, ubR, colR, bw: box.offsetWidth || 90, bh: box.offsetHeight || 28 };
+  }
+  const { appR, hudR, hintR, ubR, colR, bw, bh } = CR;
   const topEdge = Math.max(hudR.height ? hudR.bottom - appR.top : 0, ubR && ubR.height ? ubR.bottom - appR.top : 0) + 8;
   const botEdge = (hintR.height ? hintR.top - appR.top : H) - 8;
   const colTop = colR && colR.height ? colR.top - appR.top : H, colLeft = colR && colR.width ? colR.left - appR.left : W;
@@ -3938,7 +3958,7 @@ try { ortoInit(); } catch (e) {}
   }
 }
 try { if (!PUBLIC_BUILD && sessionStorage.getItem('uh-open-editor')) { sessionStorage.removeItem('uh-open-editor'); store.settings.mode = 'auto'; editList(); } } catch (e) {}
-setInterval(() => { if (state.mode === 'drive' && state.choosing) draw(); }, 260);
+setInterval(() => { if (state.mode === 'drive' && state.choosing && sheetWrap.hidden && !document.hidden) draw(); }, 260);
 if (location.hash === '#dbg' || location.hash === '#dbgw') window.__uh = { view, draw, ORTO, ortoOn, get base() { return base; }, baseCv, ortoCv, baseFits, get G() { return G; }, state, hideSheet, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu, rushStart: (k) => rushStart(k), rushEnd: (w) => rushEnd(w), chalStart: (c) => chalStart(c), chalFinal: () => chalFinal(), friendSheet: () => friendSheet(), socialRefresh: () => socialRefresh(),
   // testhjälp: ställ bilen vid en korsning (kommer via kant 'came') och visa valen där
   jn: (node, came, fwd) => { cancelAnimationFrame(anim); state.mode = 'drive'; state.gaveUp = false; state.queue = null; state.round = null;
