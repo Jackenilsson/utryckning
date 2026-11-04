@@ -34,10 +34,6 @@
 }
 [hidden]{display:none!important}
 
-#app.sheetUp #stopBtn{visibility:hidden}
-#stopBtn{position:absolute;left:50%;transform:translateX(-50%);bottom:150px;z-index:6;border:0;border-radius:999px;background:var(--ink);color:var(--sheet);font-family:var(--fDisplay);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;padding:10px 26px;box-shadow:var(--shadow);white-space:nowrap;line-height:1.1}
-#stopBtn small{display:block;font-family:var(--fBody);font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;opacity:.85}
-#stopBtn.armed{background:var(--red);color:#fff}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--fBody);font-size:15px;overflow:hidden;margin:0;-webkit-tap-highlight-color:transparent}
 #app{position:relative;height:100%;overflow:hidden}
@@ -45,7 +41,7 @@ canvas#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-
 .layer{position:absolute;left:0;right:0;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));pointer-events:none}
 .layer > *{pointer-events:auto}
 button{font-family:var(--fBody);font-size:15px;cursor:pointer;color:inherit}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,.textin:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 .eyebrow{font-family:var(--fDisplay);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--muted)}
 
 /* Larmkort */
@@ -89,7 +85,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 #giveUp.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
 #giveUp.armed small{color:#fff}
 .iconbtn.bestTurn{background:var(--amber);color:#1b1300;border-color:var(--amber);box-shadow:0 0 0 6px color-mix(in srgb,var(--amber) 45%,transparent)}
-.choice.best .disc{background:var(--amber);color:#1b1300;box-shadow:0 0 0 7px color-mix(in srgb,var(--amber) 45%,transparent),0 3px 10px rgba(0,0,0,.35)}
 .btnrow{display:flex;flex-direction:column;gap:8px}
 .iconbtn{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--sheet);box-shadow:var(--shadow);font-size:22px;font-weight:700;display:grid;place-items:center}
 #uturn{width:auto;padding:0 12px;font-size:14px}
@@ -173,13 +168,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 #updBar #updX{border:0;background:transparent;color:var(--muted);font-size:14px;padding:6px 8px;cursor:pointer}
 .fbadge{display:inline-block;min-width:16px;padding:1px 5px;border-radius:9px;background:var(--bad);color:#fff;font:700 11px/16px system-ui;vertical-align:1px}
 .choice{position:absolute;transform:translate(-50%,-22px);pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;padding:0}
-.choice:not(.rchip){pointer-events:none}
-.choice:not(.rchip) .disc,.choice:not(.rchip) .lbl{pointer-events:auto}
-.choice .disc{width:40px;height:40px;border-radius:50%;background:var(--red);color:var(--redInk);display:grid;place-items:center;box-shadow:0 3px 10px rgba(0,0,0,.35);border:2px solid var(--sheet)}
-.choice .disc svg{width:21px;height:21px}
-.choice .disc .rno{font:800 18px var(--fDisplay),system-ui;line-height:1}
-.choice .lbl{font-family:var(--fDisplay);font-weight:700;font-size:13.5px;background:var(--sheet);color:var(--ink);padding:2px 7px;border-radius:6px;border:1px solid var(--line);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
-.choice:hover .disc,.choice:focus-visible .disc{background:var(--ink);color:var(--sheet)}
 
 /* Kompass mot målet */
 #compass{position:absolute;pointer-events:none;transform:translate(-50%,-50%);z-index:1}
@@ -196,37 +184,27 @@ h1{font-family:var(--fDisplay);font-weight:700;font-size:40px;line-height:1;marg
 h2{font-family:var(--fDisplay);font-weight:700;font-size:24px;line-height:1.1;margin:0;text-wrap:balance}
 p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 .lead{color:var(--muted)}
-.dists{border:1px solid var(--line);border-radius:10px;background:var(--paper);margin-top:2px}
 .cntRow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}.cntRow[hidden]{display:none}.cntRow label{display:flex;flex-direction:column;gap:2px}.cntRow b{font-family:var(--fDisplay);font-size:17px}.cntRow small{color:var(--muted);font-size:12px}.stepper{display:flex;align-items:center;gap:6px}.stepper button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font:700 20px system-ui;cursor:pointer}.stepper button:disabled{opacity:.35;cursor:default}.stepper select{height:44px;min-width:62px;border-radius:10px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);font:700 17px system-ui;padding:0 6px}
-.dists summary{cursor:pointer;padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;list-style:none}
+.dists summary{cursor:pointer;min-height:var(--tap);box-sizing:border-box;padding:0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;list-style:none}
 .dists summary::-webkit-details-marker{display:none}
 .dists summary b{font-family:var(--fDisplay);font-size:17px}
 .dists summary b::before{content:'▸ ';color:var(--muted)}
 .dists[open] summary b::before{content:'▾ '}
 .dists summary span{font-size:13px;color:var(--muted);text-align:right}
 .dchips{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 12px}
-.dchip{border:1px solid var(--line);background:var(--sheet);color:var(--ink);border-radius:999px;padding:6px 11px;font-size:14px;display:inline-flex;gap:6px;align-items:baseline}
+.dchip{min-height:36px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);border-radius:999px;padding:6px 11px;font-size:14px;display:inline-flex;gap:6px;align-items:baseline}
 .dchip small{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .dchip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:var(--redInk)}
 .dchip[aria-pressed="true"] small{color:inherit;opacity:.8}
 .dchip:disabled{opacity:.4}
-.thumbBox{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper);margin-top:2px}
-.thumb{display:block;width:100%;height:auto;aspect-ratio:600/250}
-.thumbCap{font-size:13px;color:var(--muted);padding:6px 10px;border-top:1px solid var(--line)}
-.thumbCap b{color:var(--ink)}
 .field{display:flex;flex-direction:column;gap:6px;margin:14px 0}
-.toggles{display:flex;flex-wrap:wrap;gap:8px 18px}
-.toggles label{display:flex;gap:8px;align-items:center}
-.toggles input{width:20px;height:20px;accent-color:var(--red)}
-.primary{width:100%;border:0;border-radius:10px;background:var(--red);color:var(--redInk);font-family:var(--fDisplay);font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase;padding:14px;margin-top:8px}
-.secondary{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:11px 14px;font-weight:600}
+.primary{width:100%;min-height:52px;border:0;border-radius:var(--r-md);transition:transform .12s,filter .15s,opacity .15s;background:var(--red);color:var(--redInk);font-family:var(--fDisplay);font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase;padding:14px;margin-top:8px}
+.secondary{min-height:var(--tap);border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--r-sm);padding:11px 14px;font-weight:600}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .row > *{flex:1}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .stat b{display:block;font-family:var(--fDisplay);font-size:24px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
-.bigres{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;margin:6px 0 10px}
-.pct{font-family:var(--fDisplay);font-weight:700;font-size:56px;line-height:.9;font-variant-numeric:tabular-nums}
 .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600;border:1px solid var(--line)}
 .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
 .routes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
@@ -248,17 +226,7 @@ p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 @keyframes flash{50%{background:color-mix(in srgb,var(--red) 25%,var(--sheet))}}
 @media (min-width:900px){#sheetWrap.side{justify-content:flex-start;align-items:flex-end;background:none;pointer-events:none;padding:0 0 16px max(16px,env(safe-area-inset-left,0px))}#sheetWrap.side .sheet{max-width:560px;max-height:calc(100% - 110px);border-radius:16px;border-bottom:1px solid var(--line)}#sheetWrap.side #peekBtn{display:none}}
 @media (prefers-reduced-motion:reduce){.flash{animation:none}.sheet{transition:none}}
-.textin{width:100%;font:inherit;font-size:18px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);margin:6px 0 4px}
-.playerRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
-.playerRow > span{flex:1;min-width:0}
-.playerRow button{border:1px solid var(--line);background:var(--sheet);border-radius:8px;padding:6px 10px;font-weight:600;font-size:14px}
-.board{list-style:none;margin:6px 0 10px;padding:0}
-.board li{display:flex;gap:10px;align-items:baseline;padding:9px 2px;border-bottom:1px solid var(--line)}
-.board li .rk{font-family:var(--fDisplay);font-weight:700;font-size:20px;min-width:1.6em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
-.board li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.board li .vl{font-family:var(--fDisplay);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
-.board li.me .nm,.board li.me .vl{color:var(--red)}
-.board li:nth-child(1) .rk{color:var(--amber)}
+.textin{width:100%;min-height:var(--tap);box-sizing:border-box;font:inherit;font-size:18px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sheet);color:var(--ink);margin:6px 0 4px}
 .toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-index:8;font-family:var(--fDisplay);font-weight:700;font-size:clamp(18px,5vw,26px);line-height:1.15;padding:10px 18px;border-radius:10px;color:#fff;box-shadow:var(--shadow);pointer-events:none;box-sizing:border-box;width:max-content;max-width:calc(100vw - 32px);text-align:center;overflow-wrap:anywhere}
 .attrib{position:absolute;right:max(6px,env(safe-area-inset-right,0px));bottom:max(2px,env(safe-area-inset-bottom,0px));font-size:10px;color:var(--muted);pointer-events:none;opacity:.85}
 
@@ -268,24 +236,9 @@ p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 .mScroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:16px max(16px,env(safe-area-inset-left,0px)) 16px max(16px,env(safe-area-inset-right,0px))}
 .menuFoot{flex:none;position:relative;z-index:1;padding:12px max(16px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));background:var(--sheet);border-top:1px solid var(--line)}
 .menuFoot .primary{margin:0}
-.mHead{padding:0 2px}
-.mHead .eyebrow{color:var(--red);letter-spacing:.16em;font-size:11.5px}
-.mHead h1{font-size:36px;margin:2px 0 0;letter-spacing:.005em}
 .grp{margin:16px 0 0}
 .grpT{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 8px;font-family:var(--fDisplay);font-weight:700;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 /* Spellägen: kompakta kort, två kolumner, ikon till vänster */
-.modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:8px;margin:0}
-.mode{position:relative;display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);color:var(--ink);text-align:left;line-height:1.15;transition:border-color .15s,background-color .15s}
-.mode .mi{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--redSoft);color:var(--red);transition:background-color .15s,color .15s}
-.mode .mi svg{width:18px;height:18px}
-.mode .mt{min-width:0}
-.mode b{display:block;font-family:var(--fDisplay);font-size:17px;letter-spacing:.01em}
-@media (max-width:389px){.mode{gap:8px;padding:8px}.mode .mi{width:28px;height:28px}.mode b{font-size:16px}.mode small{font-size:11.5px}}
-.mode small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
-.mode[aria-pressed="true"]{border-color:color-mix(in srgb,var(--red) 70%,var(--line));background:color-mix(in srgb,var(--red) 8%,var(--card))}
-.mode[aria-pressed="true"] .mi{background:var(--red);color:var(--redInk)}
-.mode[aria-pressed="true"] b{color:#fff}
-.mode:last-child:nth-child(odd){grid-column:1/-1}
 .mSum{margin:8px 2px 0;color:var(--muted);font-size:13.5px;line-height:1.4}
 /* Grupperade paneler */
 .pane{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:12px;display:flex;flex-direction:column;gap:8px}
@@ -299,9 +252,6 @@ p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 .seg button[aria-pressed="true"]{border-color:color-mix(in srgb,var(--red) 70%,var(--line));background:color-mix(in srgb,var(--red) 8%,var(--card))}
 .seg button[aria-pressed="true"] b{color:#fff}
 .dists{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);margin-top:8px}
-.dists summary{min-height:var(--tap);box-sizing:border-box;padding:0 12px;align-items:center}
-.dchip{min-height:36px;background:var(--sheet)}
-.thumbBox{margin-top:8px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card)}
 .swList{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
 .sw{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:6px 12px 6px 14px;cursor:pointer;-webkit-user-select:none;user-select:none}
 .sw + .sw{border-top:1px solid var(--line)}
@@ -328,31 +278,17 @@ p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 .adv .swList{background:var(--sheet)}
 .adv .stats{margin:0;border-top:0;padding:0 2px;grid-template-columns:repeat(2,1fr)}
 .adv .stats .stat b{font-size:22px}
-.primary{min-height:52px;border-radius:var(--r-md);transition:transform .12s,filter .15s,opacity .15s}
 .primary:active{transform:scale(.985);filter:brightness(.92)}
 .primary:disabled{opacity:.45;cursor:default}
 .primary.busy{opacity:.7}
-.secondary{min-height:var(--tap);background:var(--card);color:var(--ink);border-radius:var(--r-sm)}
 .secondary:active{filter:brightness(1.15)}
-.textin{background:var(--sheet);min-height:var(--tap);box-sizing:border-box;border-radius:var(--r-sm)}
-button:focus-visible,summary:focus-visible,.textin:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 @media (min-width:700px){.sheet.menuSheet{max-height:90%}}
 /* ----- Responsiv meny: samma DOM, fler kolumner på större skärmar ----- */
-.mScroll, .mGrid, .mCol{min-width:0}
+.mScroll{min-width:0}
 .footSum{display:none}
-#areaSeg button{padding:7px 8px}
-#areaSeg button b{font-size:15.5px;letter-spacing:0}
 @media (min-width:768px){
   .sheet.menuSheet{width:min(900px,calc(100vw - 48px));max-width:none;max-height:min(92%,calc(100vh - 48px));border-radius:var(--r-lg)}
   .mScroll{padding:20px 24px 20px}
-  .mHead h1{font-size:40px}
-  .modes{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .mode:last-child:nth-child(odd){grid-column:auto}
-  .mode:last-child:nth-child(3n+1){grid-column:1/-1}
-  .mGrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0 24px;align-items:start}
-  .mGrid.one{grid-template-columns:minmax(0,1fr)}
-  .mGrid.one > .mCol:first-child{display:none}
-  .mCol > .grp:first-child{margin-top:16px}
   .menuFoot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 24px 14px}
   .menuFoot .primary{width:auto;min-width:300px;padding-left:32px;padding-right:32px}
   .footSum{display:block;min-width:0;color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -480,7 +416,6 @@ button:focus-visible,summary:focus-visible,.textin:focus-visible{outline:2px sol
     </div>
   </div>
 
-  <button type="button" id="stopBtn" hidden>Stanna<small>vid nästa korsning</small></button>
   <div id="sheetWrap"><div class="sheet" id="sheet"></div></div>
   <div class="attrib" id="attrib">Kartdata © OpenStreetMap-bidragsgivare · Byggnader delvis © Lantmäteriet (CC BY 4.0, bearbetat)</div>
 </div>
@@ -914,20 +849,21 @@ const LEVELS = [
 ];
 const INCIDENTS = ['Brand i byggnad', 'Trafikolycka', 'Automatlarm', 'Brand i fordon', 'IVPA', 'Brand i det fria', 'Vattenläcka', 'Rökutveckling'];
 const KEY = 'utryckning-harnosand-v1';
-let store = { settings: { mode: 'drive', area: 'nara', level: 1, locate: false, voice: true, autoDrive: true, autoStraight: false }, streets: {}, runs: 0, effSum: 0, greens: 0, prickBest: {}, objPos: {}, lmAdd: [], lmHide: [], roadAdd: [], objAdd: [], objHide: [] };
+let store = { settings: { mode: 'drive', area: 'nara', level: 1, locate: false, voice: true, autoDrive: true }, streets: {}, runs: 0, effSum: 0, greens: 0, prickBest: {}, objPos: {}, lmAdd: [], lmHide: [], roadAdd: [], objAdd: [], objHide: [] };
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.settings) { store = Object.assign(store, s); store.settings = Object.assign({ mode: 'drive', autoDrive: true }, s.settings); store.prickBest = store.prickBest || {}; store.objPos = store.objPos || {}; store.lmAdd = store.lmAdd || []; store.lmHide = store.lmHide || []; store.roadAdd = store.roadAdd || []; store.objAdd = store.objAdd || []; store.objHide = store.objHide || []; } } catch (e) {}
 // Sparad data med fel form (från en äldre version, en avbruten sparning eller handredigering) rättas här,
 // så att spelet alltid startar och inga skärmar visar "undefined" eller NaN. Det som går att rädda behålls.
 (function cleanStore() {
   if (store.settings && +store.settings.level > 3) store.settings.level = 3; // Expert borttagen: sparad Expert blir Van
+  if (store.settings && !(+store.settings.level >= 1)) store.settings.level = 1;
   // Valen Gamla menyn, Pilar på vägen, Kör själv rakt fram, Visa byggnader och Ny startsida är borttagna (Jacke 4 nov 2026): alla kör som nu
-  if (store.settings) { const t = store.settings; t.oldMenu = false; t.homeStyle = 'dash'; if (t.arrowStyle === 'classic') delete t.arrowStyle; t.autoStraight = false; t.lm = true; delete t.mapStyle; try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+  if (store.settings) { const t = store.settings; for (const k of ['oldMenu', 'homeStyle', 'arrowStyle', 'autoStraight', 'lm', 'mapStyle', 'steerV2']) delete t[k]; }
   const S = store;
   const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const N = (v) => typeof v === 'number' ? (isFinite(v) ? v : null) : (typeof v === 'string' && v.trim() !== '' && isFinite(+v)) ? +v : null;
   const num = (v) => { const x = N(v); return x == null ? 0 : x; };
   const fin = (v) => typeof v === 'number' && isFinite(v);
-  if (!isObj(S.settings)) S.settings = { mode: 'drive', area: 'nara', level: 1, locate: false, voice: true, autoDrive: true, autoStraight: false };
+  if (!isObj(S.settings)) S.settings = { mode: 'drive', area: 'nara', level: 1, locate: false, voice: true, autoDrive: true };
   if (S.settings.mode === 'duel') S.settings.mode = 'drive'; // Duellen (två spelare på en telefon) är borttagen
   for (const k of ['streets', 'prickBest', 'objPos']) if (!isObj(S[k])) S[k] = {};
   for (const k of ['roundBest', 'masterBest', 'rushBest', 'board']) if (k in S && S[k] != null && !isObj(S[k])) delete S[k];
@@ -964,56 +900,18 @@ try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.sett
 // Peka ut först är alltid av när spelet startar; man kryssar i den själv om man vill
 store.settings.locate = false;
 // Gamla styrningen tillbaka: bilen stannar i varje riktig korsning (Kör själv rakt fram är av som standard)
-if (!store.settings.steerV2) { store.settings.autoStraight = false; store.settings.steerV2 = true; }
 let storageOk = true;
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); storageOk = localStorage.getItem(KEY) !== null; } catch (e) { storageOk = false; } };
 try { localStorage.setItem(KEY + '-test', '1'); storageOk = localStorage.getItem(KEY + '-test') === '1'; localStorage.removeItem(KEY + '-test'); } catch (e) { storageOk = false; }
 
 // ---------- Spelare och topplista ----------
 store.board = store.board || { pts: 0, weekKey: '', weekPts: 0, runs: 0, prick: {} };
-store.player = store.player || null; // { name } eller { anon: true }
 function weekKey(d = new Date()) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y = t.getUTCFullYear(); const w = Math.ceil(((t - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7); return y + '-v' + String(w).padStart(2, '0'); }
-const BOARD_ON = false; // topplistan är avstängd tills vidare
-const BOARD = { db: null, uid: null, status: 'loading' };
-BOARD.init = (async () => {
-  try {
-    if (!BOARD_ON || !window.claude || !window.claude.use) { BOARD.status = 'none'; return; }
-    const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
-    BOARD.db = db; BOARD.uid = user ? await user.id() : null;
-    BOARD.status = db && BOARD.uid ? 'ok' : 'none';
-    if (BOARD.status === 'ok') {
-      const snap = await db.doc('scores/' + BOARD.uid).get();
-      if (snap.exists) {
-        const d = snap.data(), b = store.board;
-        b.pts = Math.max(b.pts, d.pts || 0); b.runs = Math.max(b.runs, d.runs || 0);
-        if (d.weekKey === weekKey()) { if (b.weekKey !== d.weekKey) { b.weekKey = d.weekKey; b.weekPts = 0; } b.weekPts = Math.max(b.weekPts, d.weekPts || 0); }
-        for (const [k, v] of Object.entries(d.prick || {})) b.prick[k] = Math.max(b.prick[k] || 0, v);
-        save();
-      }
-    }
-  } catch (e) { BOARD.status = 'none'; }
-})();
-let pushChain = Promise.resolve(true);
-function pushBoard() {
-  return BOARD.init.then(() => {
-    if (!store.player || store.player.anon || BOARD.status !== 'ok') return false;
-    const b = store.board;
-    const doc = { name: store.player.name, pts: b.pts, weekKey: b.weekKey, weekPts: b.weekPts, runs: b.runs, prick: b.prick, updated: Date.now() };
-    pushChain = pushChain.then(() => BOARD.db.doc('scores/' + BOARD.uid).set(doc).then(() => true, (e) => { BOARD.writeError = (e && e.code) || 'error'; return false; }));
-    return pushChain;
-  });
-}
 function addPoints(p, prickArea, prickScore) {
   const b = store.board; const wk = weekKey(); if (b.weekKey !== wk) { b.weekKey = wk; b.weekPts = 0; }
   b.pts += p; b.weekPts += p; b.runs++;
   if (prickArea) b.prick[prickArea] = Math.max(b.prick[prickArea] || 0, prickScore);
-  save(); return pushBoard();
-}
-function savedText(p, ok) {
-  if (!BOARD_ON) return `+${p} poäng`;
-  if (!store.player || store.player.anon) return `+${p} poäng · du spelar utan namn och syns inte på topplistan`;
-  if (BOARD.status !== 'ok') return `+${p} poäng · topplistan fungerar bara när spelet öppnas via länken i Claude`;
-  return ok ? `+${p} poäng · sparat på topplistan` : `+${p} poäng · kunde inte sparas på topplistan. Be den som delat spelet att bjuda in dig som redigerare.`;
+  save();
 }
 
 // ---------- Automatlarmsobjekt (från stationens lista) ----------
@@ -1068,7 +966,7 @@ const doneCount = () => [...OBJ.values()].filter(objDone).length;
 function autoDoneNote() {
   if (PUBLIC_BUILD) return ''; // i appen på GitHub finns bara klara objekt
   const n = doneCount();
-  return `<p class="lead" style="font-size:13px;margin:12px 0 0">Bara klara (gröna) objekt körs · <b>${n} av ${OBJ.size}</b> klara.${n ? '' : ' Placera dem i Byggläget först.'}</p>${PUBLIC_BUILD ? '' : '<button type="button" class="secondary" id="autoEditBtn" style="width:100%;margin-top:8px">Byggläge · placera automatlarmen</button>'}`;
+  return `<p class="lead" style="font-size:13px;margin:12px 0 0">Bara klara (gröna) objekt körs · <b>${n} av ${OBJ.size}</b> klara.${n ? '' : ' Placera dem i Byggläget först.'}</p><button type="button" class="secondary" id="autoEditBtn" style="width:100%;margin-top:8px">Byggläge · placera automatlarmen</button>`;
 }
 function buildObj(def) {
   let [oname, addr, street, lat, lon, exact, extra] = def; let placed = false;
@@ -1196,11 +1094,10 @@ let brightOn = false;
 // ---------- Flygfoto: Lantmäteriets ortofoto (CC BY 4.0), 2025 (stan) och 2024 (norrut), som kartrutor i spelets koordinater ----------
 // Rutorna ligger på jackenilsson.github.io/utryckning/orto/{nivå}/{tx}_{ty}.webp; nivå 0 = 0,32 m/px, varje nivå dubblar.
 // Nybron (nya bron klar 2025) är inritad i fotot, och gamla tillfälliga bron och brobygget är bortmålade.
-const ORTO = { base: 'https://jackenilsson.github.io/utryckning/orto/', res0: 0.3199795213106361, ts: 256, levels: 7, idx: null, idxState: 0, tiles: new Map(), max: 900, frame: 0, pend: 0, flushT: null };
-function ortoWanted() { return store.settings.mapStyle !== 'drawn'; }
-function ortoOn() { return ortoWanted() && ORTO.idxState === 1 && !brightOn; }
+const ORTO = { base: 'https://jackenilsson.github.io/utryckning/orto/', res0: 0.3199795213106361, ts: 256, levels: 7, idx: null, idxState: 0, tiles: new Map(), max: 900, frame: 0, flushT: null };
+function ortoOn() { return ORTO.idxState === 1 && !brightOn; }
 function ortoInit() {
-  if (ORTO.idxState || !ortoWanted()) return; ORTO.idxState = 3; // hämtar
+  if (ORTO.idxState) return; ORTO.idxState = 3; // hämtar
   fetch(ORTO.base + 'index.json').then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).then(j => {
     const idx = {}; for (const k in j) { const L = j[k]; const bin = atob(L.b); const bits = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bits[i] = bin.charCodeAt(i); idx[k] = { x0: L.x0, y0: L.y0, w: L.w, h: L.h, bits }; }
     ORTO.idx = idx; ORTO.idxState = 1; baseDirty = true; requestDraw(); updAttrib();
@@ -1273,7 +1170,7 @@ function drawOrto(g, ppm, x0, y0, x1, y1) {
 }
 const ATTRIB_STD = 'Kartdata © OpenStreetMap-bidragsgivare · Byggnader delvis © Lantmäteriet (CC BY 4.0, bearbetat)';
 function attribText() { return ortoOn() ? 'Flygbild © Lantmäteriet (CC BY 4.0, bearbetad) · ' + ATTRIB_STD : ATTRIB_STD; }
-function updAttrib() { const a = document.getElementById('attrib'); if (a && !(state.round && isOrt && isOrt())) a.textContent = attribText(); }
+function updAttrib() { const a = document.getElementById('attrib'); if (a && !(state.round && isOrt())) a.textContent = attribText(); }
 function setBrightMap(on) { if (on === brightOn) return; brightOn = on; readColors(); baseDirty = true; requestDraw(); }
 // Orterkartan: skogslandskap i stället för slät sandfärg
 const FOREST = { land: '#9FC782', casing: '#7E9C63', road: '#F4EBD0' };
@@ -1300,7 +1197,6 @@ for (const e of G.edges) { if (e.hide) continue; if (e.ow && e.cls <= 7) { let a
   const key = e.ow && e.cls <= 4 ? e.cls + 10 : e.cls; tLine(roadPaths[key] || (roadPaths[key] = tMap()), e.pts); }
 }
 buildRoadPaths();
-const linePath = (arr) => { const p = new Path2D(); for (const l of arr) { if (!l.length) continue; p.moveTo(l[0][0], l[0][1]); for (let i = 1; i < l.length; i++) p.lineTo(l[i][0], l[i][1]); } return p; };
 const tLines = (arr) => { const T = tMap(); for (const l of arr) tLine(T, l); return T; };
 const coastPath = tLines(G.coast), railPath = tLines(G.rail), visPath = tLines(G.vis);
 const ringsPath = (rings, p = new Path2D()) => { for (const l of rings) { if (l.length < 3) continue; p.moveTo(l[0][0], l[0][1]); for (let i = 1; i < l.length; i++) p.lineTo(l[i][0], l[i][1]); p.closePath(); } return p; };
@@ -1344,7 +1240,7 @@ function goalPath(steps) { if (!steps.length) return stepsPath(steps); const las
 // ---------- Vy ----------
 let W = 0, H = 0, DPR = 1;
 const view = { cx: SX, cy: SY, scale: 1, rot: 0, anchorY: 0.5 };
-function resize() { if (state && state.mode === 'menu' && sheet.classList.contains('menuSheet') && !state.wizOn && (innerWidth >= 768) !== state.menuWide) { state.menuScroll = ($('#mScroll') || sheet).scrollTop; setTimeout(menu, 0); } DPR = Math.min(window.devicePixelRatio || 1, 2); baseDirty = true; W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); requestDraw(); }
+function resize() { DPR = Math.min(window.devicePixelRatio || 1, 2); baseDirty = true; W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR); requestDraw(); }
 window.addEventListener('resize', resize);
 function w2s(x, y) { const dx = x - view.cx, dy = y - view.cy, c = Math.cos(view.rot), s = Math.sin(view.rot); return [W / 2 + (dx * c - dy * s) * view.scale, H * view.anchorY + (dx * s + dy * c) * view.scale]; }
 function s2w(px, py) { const X = (px - W / 2) / view.scale, Y = (py - H * view.anchorY) / view.scale, c = Math.cos(-view.rot), s = Math.sin(-view.rot); return [view.cx + X * c - Y * s, view.cy + X * s + Y * c]; }
@@ -1377,7 +1273,7 @@ function renderBase(sc, quick) {
   const ws = side / sc; const bx0 = view.cx - ws / 2, by0 = view.cy - ws / 2;
   baseCv.width = Math.round(side * cdpr); baseCv.height = Math.round(side * cdpr);
   const g = bctx; g.setTransform(cdpr * sc, 0, 0, cdpr * sc, -bx0 * cdpr * sc, -by0 * cdpr * sc);
-  const orto = ortoOn() && sc >= 0.03 && !(state.round && brightOn && curMode() === 'orter');
+  const orto = ortoOn() && sc >= 0.03;
   // Med flygfoto ligger fotot i ett eget lager (ortoCv) så att nya rutor kan målas in utan att vägnätet ritas om
   if (orto) { ortoPaint(sc, cdpr, bx0, by0, ws); baseFromOrto(sc, cdpr, bx0, by0, ws); }
   else { g.fillStyle = C.land; g.fillRect(bx0, by0, ws, ws); VIS = [bx0, by0, bx0 + ws, by0 + ws]; ORTO_DRAW = false; try { drawStatic(g, sc); } finally { VIS = null; } }
@@ -1438,7 +1334,7 @@ function draw() {
   ctx.restore();
   if (state.labels) drawLabels();
   if (showLandmarks()) drawLandmarks();
-  if (state.mode === 'drive') { if (roadArrowsOn()) roadArrowsFrame(); else placeChoices(); placeCompass(); }
+  if (state.mode === 'drive') { roadArrowsFrame(); placeCompass(); }
 }
 function drawStatic(ctx, sc) {
   const px = 1 / sc; const view = { scale: sc };
@@ -1693,7 +1589,7 @@ function voiceSheet() {
     </div></details>
     <button type="button" class="secondary" id="vBack" style="width:100%;margin-top:12px">Tillbaka</button>
   `);
-  const back = () => { state.wAdvOpen = true; menu(); };
+  const back = () => menu();
   $('#vX').onclick = back; $('#vBack').onclick = back;
   $('#vOn').onchange = (e) => { s.voice = e.target.checked; save(); };
   const sample = () => sayParts(['Storgatan.'], true);
@@ -1752,25 +1648,6 @@ function setPeek(p) {
 
 // ---------- Meny ----------
 
-function areaThumb(list, ar = 2.4) {
-  const pts = list.map(s => [s.cx, s.cy]); if (!pts.length) return '';
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
-  const pad = Math.max(250, (x1 - x0 + y1 - y0) * 0.12); x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
-  let w = x1 - x0, h = y1 - y0; if (w / h < ar) { const nw = h * ar; x0 -= (nw - w) / 2; w = nw; } else { const nh = w / ar; y0 -= (nh - h) / 2; h = nh; }
-  const k = 600 / w; const P = (x, y) => ((x - x0) * k).toFixed(0) + ' ' + ((y - y0) * k).toFixed(0);
-  const inB = (e) => e.pts.some(([x, y]) => x > x0 && x < x0 + w && y > y0 && y < y0 + h);
-  const step = Math.max(1, Math.round(1 / (k * 4)));
-  const line = (e) => { let d = 'M' + P(e.pts[0][0], e.pts[0][1]); for (let i = step; i < e.pts.length; i += step) d += 'L' + P(e.pts[i][0], e.pts[i][1]); const l = e.pts[e.pts.length - 1]; return d + 'L' + P(l[0], l[1]); };
-  const hi = new Set(); for (const s of list) for (const id of s.edges) hi.add(id);
-  let ctxD = '', hiD = '';
-  for (const e of G.edges) { if (!inB(e)) continue; if (hi.has(e.id)) hiD += line(e); else if (e.cls <= 7) ctxD += line(e); }
-  let regD = '', coastD = ''; if (isOrt()) for (const [k, pts] of REG.lines) { const d = 'M' + pts.map(([x, y]) => P(x, y)).join('L'); if (k === 'c') coastD += d; else regD += d; }
-  let sea = ''; if (G.sea[0]) { const r = G.sea[0]; const st2 = Math.max(1, Math.round(r.length / 1500)); sea = 'M' + r.filter((_, i) => i % st2 === 0).map(([x, y]) => P(x, y)).join('L') + 'Z'; }
-  const obj = (isAuto() || isOmr() || isOrt()) ? list.map(s => { const [a, b] = P(s.px, s.py).split(' '); return `<circle cx="${a}" cy="${b}" r="5" fill="var(--red)" stroke="var(--sheet)" stroke-width="2"/>`; }).join('') : '';
-  const [sx, sy] = P(SX, SY).split(' ');
-  const vh = Math.round(600 / ar); return `<svg class="thumb" viewBox="0 0 600 ${vh}" style="aspect-ratio:600/${vh}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="${sea}" fill="var(--water,#cfe3f2)" stroke="none"/><path d="${coastD}" fill="none" stroke="var(--coast)" stroke-width="1.4"/><path d="${regD}" fill="none" stroke="var(--muted)" stroke-opacity=".55" stroke-width="1.3"/><path d="${ctxD}" fill="none" stroke="var(--muted)" stroke-opacity=".45" stroke-width="1.3" stroke-linecap="round"/><path d="${hiD}" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${obj}<rect x="${sx - 7}" y="${sy - 7}" width="14" height="14" rx="3" fill="var(--ink)"/><text x="${sx}" y="${+sy + 4}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--sheet)">S</text></svg>`;
-}
 const ICON = {
   drive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16V9a1 1 0 0 1 1-1h9l4 4h3a1 1 0 0 1 1 1v3"/><path d="M3 16h18"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/><path d="M7 5h3M8.5 3.5v3"/></svg>',
   prick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>',
@@ -1802,7 +1679,7 @@ function rushHud() { const r = state.rush; if (!r) return; $('#alarmType').class
 function rushEnd(why) {
   const r = state.rush; if (!r || r.done) return; r.done = true; clearInterval(rushTimer);
   cancelAnimationFrame(revealAnim); state.round = null; state.confirmMiss = false; state.missAdvance = null; state.choosing = false; $('#choices').innerHTML = '';
-  $('#controls').hidden = true; $('#locActs').hidden = true; $('#stopBtn').hidden = true; $('#compass').hidden = true; $('#hud').hidden = true; resetMenuTop();
+  $('#controls').hidden = true; $('#locActs').hidden = true; $('#compass').hidden = true; $('#hud').hidden = true; resetMenuTop();
   const B = rushBest(); const old = B[r.kind] || 0; const rec = r.count > old; if (rec) { B[r.kind] = r.count; save(); sbSubmit(r.kind, r.count); }
   const secs = Math.round((performance.now() - r.t0) / 1000);
   const name = r.kind === 'blitz' ? 'Blixten' : 'En chans';
@@ -1895,7 +1772,7 @@ function acctSheet() {
     sbRpc(fn, { p_name: name, p_pin: pin }).then(r => {
       btns.forEach(b => { b.disabled = false; });
       if (r === 'OK') {
-        store.acct = { name, pin }; socialCache = null; save(); toast(fn === 'uh_signup' ? 'Kontot är skapat!' : 'Inloggad som ' + name, C.good); sbSyncUp(); socialRefresh().then(() => updSocialBadge());
+        store.acct = { name, pin }; socialCache = null; save(); toast(fn === 'uh_signup' ? 'Kontot är skapat!' : 'Inloggad som ' + name, C.good); sbSyncUp(); socialRefresh();
         if (still()) menu(); else updSocialBadge();
       } else if (!still() || !err(r || 'Något gick fel.')) toast((fn === 'uh_signup' ? 'Kontot skapades inte: ' : 'Inloggningen misslyckades: ') + (r || 'något gick fel.'), C.bad, 3500);
     }).catch(() => {
@@ -1919,7 +1796,7 @@ function boardSheet(tab) {
   sheet.querySelectorAll('#lbTabs button').forEach(b => b.onclick = () => boardSheet(b.dataset.v));
   const unit = KINDS.find(k => k[0] === tab)[2];
   const req = state.lbReq = (state.lbReq || 0) + 1; // bara svaret på den senaste hämtningen visas (byter man flik hinner ett gammalt svar annars skriva över)
-  sbCall('leaderboard?kind=eq.' + tab + '&select=name,value,extra,updated_at&order=value.desc&limit=50')
+  sbCall('leaderboard?kind=eq.' + tab + '&select=name,value,extra&order=value.desc&limit=50')
     .then(rows => {
       const el = $('#lbBody'); if (!el || state.lbReq !== req) return;
       if (!Array.isArray(rows)) throw new Error('svar');
@@ -2086,7 +1963,7 @@ function friendList() {
   const icoUserX = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 3.2-4.9 6.5-4.9 1 0 2 .2 2.8.5"/><path d="M16.5 15.5l4 4m0-4l-4 4"/></svg>';
   const avatar = `<span class="frAvatar">${icoUser}</span>`;
   const row = (inner) => '<div class="frRow">' + inner + '</div>';
-  const info = (name, sub, dot) => `<div class="frInfo"><div class="frName2">${esc(name)}</div>${sub ? `<div class="frStat">${dot !== undefined ? `<i class="frDot${dot ? ' on' : ''}" style="${dot === null ? '' : ''}"></i>` : ''}${esc(sub)}</div>` : ''}</div>`;
+  const info = (name, sub, dot) => `<div class="frInfo"><div class="frName2">${esc(name)}</div>${sub ? `<div class="frStat">${dot !== undefined ? `<i class="frDot${dot ? ' on' : ''}" ></i>` : ''}${esc(sub)}</div>` : ''}</div>`;
   const chunks = [];
   const reqIn = d.requests_in || [];
   if (reqIn.length) chunks.push(`<div class="frSecRow"><div class="eyebrow" style="margin:0">Väntande förfrågningar</div><span class="frBadge">${reqIn.length}</span></div>` + reqIn.map(n2 => row(
@@ -2206,7 +2083,7 @@ function bugSnapshot() {
     came: state.came ?? null, target: state.target || null,
     steps: (state.steps || []).slice(-15).map(st => st.e),
     exits: (state.exits || []).map(x => ({ e: x.e, lab: x.lab || '', name: (G.edges[x.e] || {}).name || '', path: x.path ? x.path.map(p2 => p2.e) : null })),
-    btns, arrows: roadArrowsOn() ? 'road' : 'classic', pc: roadArrowsOn() ? null : (state._pc || null), ra: roadArrowsOn() ? (state._ra || null) : null, choosing: !!state.choosing
+    btns, ra: state._ra || null, choosing: !!state.choosing
   };
 }
 // Sparade rapporter skickas en i taget. Servern svarar 'OK', 'För många rapporter just nu.' (försök igen senare)
@@ -2270,7 +2147,6 @@ setTimeout(() => { const b = $('#bugBtn'); if (b) b.onclick = bugOpen; bugQueueF
 
 // ---------- Pilar på vägen: varje val målas längs sin egen väg, med en namnskylt vid pilspetsen ----------
 const RA_COLORS = ['#3D9BFF', '#E35BD8', '#22C7B2', '#A6E04A', '#9C7BFF', '#F2F4F6'];
-const roadArrowsOn = () => store.settings.arrowStyle !== 'classic';
 function polyDist(x, y, pl) {
   let best = 1e9;
   for (let i = 1; i < pl.length; i++) { const [ax, ay] = pl[i - 1], [bx, by] = pl[i]; const dx = bx - ax, dy = by - ay; const L2 = dx * dx + dy * dy || 1e-9;
@@ -2445,7 +2321,6 @@ function roadArrowsFrame() {
     // skylten hamnade en bit bort: tunn streckad linje från spetsen
     // avståndet från spetsen till skyltens närmaste kant
     const c = cands[i], pc = placed[i];
-    const ex2 = Math.max(c.tx, Math.min(pc.cx + pc.w / 2, Math.max(pc.cx - pc.w / 2, c.tx))), ey2 = Math.max(c.ty, Math.min(pc.cy + pc.h / 2, Math.max(pc.cy - pc.h / 2, c.ty)));
     const nxp = Math.max(pc.cx - pc.w / 2, Math.min(pc.cx + pc.w / 2, c.tx)), nyp = Math.max(pc.cy - pc.h / 2, Math.min(pc.cy + pc.h / 2, c.ty));
     const gap = Math.hypot(nxp - c.tx, nyp - c.ty);
     if (gap > 14) { ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(c.tx + c.dx * 8, c.ty + c.dy * 8); ctx.lineTo(nxp, nyp); ctx.stroke(); ctx.setLineDash([]); }
@@ -2595,7 +2470,7 @@ function gainXP(parts, key) {
   X.log.unshift({ t: Date.now(), x: gain, w: list.filter(p => p[1] > 0).map(p => p[0]).slice(0, 2).join(' · ') }); X.log = X.log.slice(0, 12);
   save(); if (acct()) sbSubmit('xp', X.total);
   const r = { gain, list, before, after, up: after.n > before.n };
-  state.xpLast = r; return r;
+  return r;
 }
 // Raden "+120 XP" i resultatet, med en liten mätare. Nivå upp -> popup strax efter.
 function xpShow(r) {
@@ -2720,21 +2595,12 @@ function wizMenu() {
   const rb = store.roundBest && store.roundBest[bestKey];
   const rec = pl ? `<div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat"><b>${rb ? rb.pct + ' %' : '–'}</b><span>${rb ? 'rekord här, ' + fmtT(rb.secs) : 'inget rekord här än'}</span></div><div class="stat"><b>${Object.values(store.streets).filter(r => r.loc && r.loc[r.loc.length - 1] === 'g').length}</b><span>rätt direkt senast</span></div></div>` : '';
   let body = '', foot = '';
-  const dash = s.homeStyle !== 'classic'; // nya startsidan är förvald överallt (Jacke 3 nov 2026); förra startsidan: Inställningar > Ny startsida av
-  if (w.step === 'start' && dash) {
+  if (w.step === 'start') {
     body = dashBody();
-  } else if (w.step === 'start' || w.step === 'settings') {
-    body = `<div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;flex:1">${w.step === 'settings' ? 'Inställningar' : 'Vad vill du göra?'}</h1>${fsOk() ? `<button type="button" class="frIcon" id="fsBtn" aria-label="Fullskärm" title="${fsEl() ? 'Lämna fullskärm' : 'Fullskärm'}">${fsIcon()}</button>` : ''}</div>${w.step === 'settings' ? '' : `<div class="wgrid">
-      ${card('drive', 'Köra utryckning', 'Larm från stationen till en gata, på tid', 'drive')}
-      ${OBJ.size ? card('autodrive', 'Automatlarm', 'Larm till stationens objekt, kör dit från stationen', 'auto') : ''}
-      ${card('ova', 'Öva på kartan', 'Pricka gator, områden och orter', 'prick')}
-      ${card('tavla', 'Tävla', 'Utmana en kollega, Blixten eller En chans', 'duel')}
-    </div>`}
-    ${w.step === 'settings' ? '' : `<div class="row" style="margin-top:12px"><button type="button" class="secondary" id="acctBtn" style="flex:1">${acct() ? '♟︎ ' + esc(acct().name) : 'Skapa konto'}</button><button type="button" class="secondary" id="friendBtn" style="flex:1">Vänner</button><button type="button" class="secondary" id="boardBtn2" style="flex:1">Topplista</button></div>
-    <button type="button" class="secondary" id="statsBtn" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px">${ICON_STATS}Min statistik</button>
-    <button type="button" class="secondary" id="xpBtn" style="width:100%;margin-top:8px">${(() => { const L = xpLevel(xpStore().total); return 'Nivå ' + L.n + ' · ' + esc(L.title) + ' · ' + L.into + '/' + L.need + ' XP · ' + xpPct(L) + ' %'; })()}</button>`}
+  } else if (w.step === 'settings') {
+    body = `<div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;flex:1">Inställningar</h1>${fsOk() ? `<button type="button" class="frIcon" id="fsBtn" aria-label="Fullskärm" title="${fsEl() ? 'Lämna fullskärm' : 'Fullskärm'}">${fsIcon()}</button>` : ''}</div>
     <button type="button" class="secondary" id="installBtn" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px" ${canInstall() ? '' : 'hidden'}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>Installera som app</button>
-    <details class="adv" id="advBox" style="margin-top:14px" ${state.wAdvOpen || w.step === 'settings' ? 'open' : ''}><summary>Avancerat</summary><div class="advBody"><div class="swList">
+    <details class="adv" id="advBox" style="margin-top:14px" open><summary>Avancerat</summary><div class="advBody"><div class="swList">
       ${sw('optVoice', s.voice, 'Larm med röst', 'Larmet läses upp')}
       ${sw('optSfx', s.sfx !== false, 'Ljud vid ny nivå', 'Kort fanfar när du går upp en nivå')}
     </div>
@@ -2790,9 +2656,8 @@ function wizMenu() {
     const ok = nCand || (s.mode === 'utm' && utP) || s.mode === 'blitz' || s.mode === 'one' || (s.mode === 'master' && masterChains().length > 0);
     foot = `<div class="menuFoot"><div class="footSum">${footTxt}</div><button class="primary" id="wStart" ${ok ? '' : 'disabled'}>${ok ? startTxt : s.mode === 'auto' && !doneCount() ? 'Inga klara automatlarm än' : 'Inget att öva på här'}</button></div>`;
   }
-  showSheet(`<div class="mScroll" id="mScroll"><div class="wizTop" ${w.step === 'start' && dash ? 'hidden' : ''}>${w.step === 'start' ? '' : '<button type="button" class="wback" id="wizBack" aria-label="Tillbaka">‹</button>'}<span class="eyebrow">${esc(crumb)}</span></div>${body}</div>${foot}`);
+  showSheet(`<div class="mScroll" id="mScroll"><div class="wizTop" ${w.step === 'start' ? 'hidden' : ''}>${w.step === 'start' ? '' : '<button type="button" class="wback" id="wizBack" aria-label="Tillbaka">‹</button>'}<span class="eyebrow">${esc(crumb)}</span></div>${body}</div>${foot}`);
   sheet.classList.add('menuSheet');
-  state.wizOn = true;
   const rerender = () => { state.menuScroll = ($('#mScroll') || sheet).scrollTop; state.keepChal = true; menu(); };
   const bk = $('#wizBack'); if (bk) bk.onclick = () => {
     if (w.step === 'cat' || w.step === 'settings') w.step = 'start';
@@ -2809,21 +2674,14 @@ function wizMenu() {
     state.keepChal = from === 'area'; menu(); });
   const on = (id, fn) => { const el = $(id); if (el) el.onchange = fn; };
   on('#optVoice', (e) => { s.voice = e.target.checked; save(); });
-  on('#optOrto', (e) => { s.mapStyle = e.target.checked ? 'orto' : 'drawn'; save(); if (s.mapStyle === 'orto') { if (ORTO.idxState === 2) ORTO.idxState = 0; ortoInit(); } baseDirty = true; requestDraw(); updAttrib(); });
-  on('#optDash', (e) => { s.homeStyle = e.target.checked ? 'dash' : 'classic'; save(); w.step = 'start'; menu(); });
   const dSet = $('#dSettings'); if (dSet) dSet.onclick = () => { w.step = 'settings'; menu(); };
   const xb = $('#xpBtn'); if (xb) xb.onclick = xpSheet;
   on('#optSfx', (e) => { s.sfx = e.target.checked; save(); if (s.sfx) xpSound(); });
   const dDay = $('#dDaily'); if (dDay) dDay.onclick = () => { const t = dailyTask(); s.mode = t.kind; if (t.kind === 'auto') s.autoDrive = true; save(); w.cat = null; w.step = 'area'; menu(); };
-  on('#optLm', (e) => { s.lm = e.target.checked; save(); requestDraw(); });
-  on('#optAuto', (e) => { s.autoStraight = e.target.checked; save(); });
   on('#optLocate', (e) => { s.locate = e.target.checked; save(); });
-  on('#optOldMenu', (e) => { if (e.target.checked) { s.oldMenu = true; save(); menu(); } });
-  on('#optRoadArrows', (e) => { s.arrowStyle = e.target.checked ? 'road' : 'classic'; save(); });
   const bb = $('#builderBtn'); if (bb) bb.onclick = () => { state.bFitted = false; editList(); };
   const we = $('#autoEditBtn'); if (we) we.onclick = () => { state.bTab = 'obj'; state.bFitted = false; editList(); };
   const vb = $('#voiceBtn'); if (vb) vb.onclick = voiceSheet;
-  const wab = $('#advBox'); if (wab && w.step === 'start') wab.ontoggle = () => { state.wAdvOpen = wab.open; };
   const ab2 = $('#acctBtn'); if (ab2) ab2.onclick = acctSheet;
   const fsb = $('#fsBtn'); if (fsb) fsb.onclick = fsToggle;
   const ib = $('#installBtn'); if (ib) ib.onclick = installApp;
@@ -2831,7 +2689,6 @@ function wizMenu() {
   const lb2 = $('#boardBtn2'); if (lb2) lb2.onclick = () => boardSheet();
   const st2 = $('#statsBtn'); if (st2) st2.onclick = statsSheet;
   sheet.querySelectorAll('#levelSeg button').forEach(b => b.onclick = () => { s.level = +b.dataset.v; save(); rerender(); });
-  sheet.querySelectorAll('#autoSeg button').forEach(b => b.onclick = () => { s.autoDrive = b.dataset.v === '1'; save(); rerender(); });
   const wa = $('#wArea'); if (wa) wa.onclick = () => { w.areaRet = 'final'; w.step = 'area'; state.keepChal = true; menu(); };
   sheet.querySelectorAll('#utmType button').forEach(b => b.onclick = () => { s.utmType = b.dataset.v; const un = $('#utmName'); if (un) s.utmName = un.value.trim(); save(); rerender(); });
   if ($('#utmCount')) {
@@ -2853,189 +2710,14 @@ function menu() {
   // Vännen man utmanar ligger kvar när guiden ritas om inifrån (val av typ, nivå, område)
   const keepChal = state.keepChal; state.keepChal = false;
   resetMenuTop(); cancelAnimationFrame(revealAnim); try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {} state.chal = null; state.rush = null; state.master = null; if (!keepChal) state.chalTo = null; state.chalDbId = null; clearInterval(rushTimer);
-  state.gen = (state.gen || 0) + 1; cancelAnimationFrame(anim); state.choosing = false; state.drawPts = null; state.showTarget = false; state.autoRun = 0; state.stopNext = false; state.resetArm = false;
+  state.gen = (state.gen || 0) + 1; cancelAnimationFrame(anim); state.choosing = false; state.drawPts = null; state.showTarget = false;
   state.round = null; state.mode = 'menu'; state.confirmMiss = false; state.missAdvance = null; state.car = null; state.trailPath = null; state.optPath = null; state.targetPath = null; state.marks = []; state.labels = true;
-  $('#hud').hidden = true; $('#controls').hidden = true; $('#editActs').hidden = true; $('#rdActs').hidden = true; $('#stopBtn').hidden = true; $('#choices').innerHTML = ''; $('#compass').hidden = true; state.editing = null;
+  $('#hud').hidden = true; $('#controls').hidden = true; $('#editActs').hidden = true; $('#rdActs').hidden = true; $('#choices').innerHTML = ''; $('#compass').hidden = true; state.editing = null;
   view.rot = 0; view.anchorY = 0.32; view.cx = SX; view.cy = SY + 250; view.scale = Math.min(W, 520) / 1300;
   requestDraw();
-  if (store.settings.oldMenu !== true && location.hash !== '#dbg') return wizMenu();
-  const s = store.settings; const pl = prickLike(); const bestKey = s.mode === 'omr' || s.mode === 'orter' ? s.mode : (s.mode === 'auto' ? 'auto_' : '') + s.area; const nCand = candidates(s.area, pl).length; const curA = areaById(s.area); const isDist = !!curA.dist; const ut = s.mode === 'utm' ? (s.utmType || 'drive') : null; const utP = ut === 'omr' || ut === 'orter'; const uN = Math.max(1, Math.min(25, s.utmCount || 5));
-  const avg = store.runs ? Math.round(store.effSum / store.runs) + ' %' : '–';
-  const MODES = [['drive', 'Utryckning', 'Kör från stationen'], ['prick', 'Pricka gatan', 'Tryck på kartan'], ['auto', 'Automatlarm', 'Stationens objekt'], ['omr', 'Pricka området', 'Prickar på kartan'], ['orter', 'Pricka orten', 'Byar runt stan'], ['utm', 'Utmaning', 'Skicka en kod till en kollega']];
-  if (!OBJ.size) { const k = MODES.findIndex(m => m[0] === 'auto'); if (k >= 0) MODES.splice(k, 1); if (s.mode === 'auto') { s.mode = 'drive'; save(); } }
-  if (s.mode === 'blitz' || s.mode === 'one' || s.mode === 'master') { s.mode = 'drive'; save(); }
-  const SUM = { drive: 'Peka ut gatan och kör dit från stationen. Du väljer väg i varje korsning.', prick: isDist ? 'Alla gator i stadsdelen, en i taget. Kartan ligger still och färgerna sitter kvar.' : 'Tio gator i rad. Tryck där gatan ligger, tre försök per gata.', auto: s.autoDrive ? 'Larmet kommer till ett av stationens objekt. Kör dit från stationen, du väljer väg i varje korsning.' : 'Tio larm i rad. Alla objekt syns som prickar, tryck på rätt objekt. Tre försök per larm.', omr: 'Alla områden på en karta. Tryck på rätt prick, två fel och den visas.', orter: 'Alla 20 orter på en karta. Tryck på rätt prick.', utm: ut === 'omr' ? 'Alla 36 områden i slumpad ordning. Skicka koden, kollegan får samma ordning.' : ut === 'orter' ? 'Alla 20 orter i slumpad ordning. Skicka koden, kollegan får samma ordning.' : `Kör ${uN === 1 ? 'ett larm' : uN + ' larm'} och skicka koden. Den som klistrar in den får samma larm.` };
-  const unit = s.mode === 'auto' ? 'objekt' : s.mode === 'omr' ? 'områden' : s.mode === 'orter' ? 'orter' : 'gator';
-  const advOpen = state.advOpen || s.lm === false || s.autoStraight === true;
-  const startTxt = nCand ? (s.mode === 'utm' ? 'Skapa utmaning' : pl ? 'Starta omgång' : 'Starta larm') : s.mode === 'auto' && !doneCount() ? 'Inga klara automatlarm än' : 'Inget att öva på här';
-  const areaTxt = s.mode === 'omr' || ut === 'omr' ? 'Hela Härnösand' : s.mode === 'orter' || ut === 'orter' ? 'Härnösands kommun' : curA.name;
-  const wide = innerWidth >= 768; state.menuWide = wide; state.wizOn = false;
-  const sw = (id, on, title, sub, hide) => `<label class="sw" ${hide ? 'hidden' : ''}><span><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" role="switch" id="${id}" ${on ? 'checked' : ''}><i aria-hidden="true"></i></label>`;
-  showSheet(`
-    <div class="mScroll" id="mScroll">
-    <div class="mHead">
-      <div class="eyebrow">Räddningstjänsten · Härnösand · ${DATA.ver || ''}</div>
-      <h1>Utryckning</h1>
-    </div>
-    ${BOARD_ON ? `<div class="playerRow"><span>${store.player && !store.player.anon ? 'Spelar som <b>' + esc(store.player.name) + '</b>' : 'Spelar utan namn'}</span><button type="button" id="changeName">${store.player && !store.player.anon ? 'Byt namn' : 'Lägg till namn'}</button><button type="button" id="boardBtn">Topplista</button></div>` : ''}
-    <section class="grp" aria-label="Spelläge">
-      <h3 class="grpT">Spelläge</h3>
-      <div class="modes" id="modeSeg" role="radiogroup">${MODES.map(([v, n, d]) => `<button type="button" class="mode" data-v="${v}" role="radio" aria-checked="${s.mode === v}" aria-pressed="${s.mode === v}"><span class="mi">${ICON[v]}</span><span class="mt"><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>
-      <p class="mSum">${SUM[s.mode] || ''}</p>
-    </section>
-
-    <section class="grp" ${s.mode === 'auto' ? '' : 'hidden'}>
-      <h3 class="grpT">Automatlarm</h3>
-      <div class="seg two" id="autoSeg"><button type="button" data-v="1" aria-pressed="${!!s.autoDrive}"><b>Kör dit</b><span>Peka ut och kör</span></button><button type="button" data-v="0" aria-pressed="${!s.autoDrive}"><b>Bara peka ut</b><span>10 objekt i rad</span></button></div>
-    </section>
-
-    <section class="grp" ${s.mode === 'utm' ? '' : 'hidden'}>
-      <h3 class="grpT">Vad ska utmaningen vara?</h3>
-      <div class="seg three" id="utmType">${[['drive', 'Utryckning', 'Kör till adresser'], ['omr', 'Pricka området', '36 områden'], ['orter', 'Pricka orten', '20 orter']].map(([v, n, d]) => `<button type="button" data-v="${v}" aria-pressed="${ut === v}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>
-      <div class="cntRow" ${ut === 'drive' ? '' : 'hidden'}>
-        <label for="utmCount"><b>Antal adresser: <span id="utmCountTxt">${uN}</span></b><small>1–25 larm i rad</small></label>
-        <div class="stepper"><button type="button" id="utmMinus" aria-label="Färre adresser" ${uN <= 1 ? 'disabled' : ''}>−</button><select id="utmCount" aria-label="Antal adresser">${Array.from({ length: 25 }, (_, i) => `<option value="${i + 1}" ${uN === i + 1 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select><button type="button" id="utmPlus" aria-label="Fler adresser" ${uN >= 25 ? 'disabled' : ''}>+</button></div>
-      </div>
-      <div class="pane" style="margin-top:10px">
-        <label class="eyebrow" for="utmName">Ditt namn</label>
-        <input class="textin" id="utmName" maxlength="10" placeholder="t.ex. Kalle" value="${esc(s.utmName || '')}" style="margin:0;font-size:16px;padding:10px">
-        <label class="eyebrow" for="utmCode">Har du fått en kod?</label>
-        <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="textin" id="utmCode" placeholder="Klistra in koden" autocapitalize="characters" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;margin:0;font:600 15px ui-monospace,monospace;padding:10px"><button type="button" class="secondary" id="utmPlay" style="padding:0 16px">Spela</button></div>
-        <p class="lead" id="utmErr" style="font-size:13px;color:var(--bad);margin:0" hidden></p>
-      </div>
-    </section>
-
-
-    <div class="mGrid ${s.mode === 'omr' || s.mode === 'orter' || utP ? 'one' : ''}">
-    <div class="mCol">
-    <section class="grp" ${s.mode === 'omr' || s.mode === 'orter' || utP ? 'hidden' : ''}>
-      <h3 class="grpT">Område</h3>
-      <div class="seg three" id="areaSeg">${AREAS.map(a => `<button type="button" data-v="${a.id}" aria-pressed="${s.area === a.id}"><b>${a.name}</b><span>${a.desc}</span></button>`).join('')}</div>
-      <details class="dists" ${isDist ? 'open' : ''}><summary><b>Stadsdelar</b><span>${isDist ? esc(curA.name) : 'Öva en stadsdel i taget'}</span></summary>
-        <div class="dchips" id="distSeg">${DISTRICTS.map(d => { const n = candidates('d:' + d[0], pl).length; return n === 0 ? '' : `<button type="button" class="dchip" data-v="d:${d[0]}" aria-pressed="${s.area === 'd:' + d[0]}">${esc(d[1])}<small>${store.roundBest && store.roundBest[(s.mode === 'auto' ? 'auto_' : '') + 'd:' + d[0]] ? '★ ' + store.roundBest[(s.mode === 'auto' ? 'auto_' : '') + 'd:' + d[0]].pct + ' %' : n}</small></button>`; }).join('')}</div>
-      </details>
-      <div class="thumbBox">${areaThumb(candidates(s.area, pl), wide ? 1.6 : 2.4)}<div class="thumbCap"><b>${esc(areaTxt)}</b> · ${nCand} ${unit}</div></div>
-    </section>
-
-    </div>
-    <div class="mCol">
-    <section class="grp" ${pl || utP ? 'hidden' : ''}>
-      <h3 class="grpT">Svårighetsgrad</h3>
-      <div class="seg three" id="levelSeg">${LEVELS.map(l => `<button type="button" data-v="${l.id}" aria-pressed="${s.level === l.id}"><b>${l.name}</b><span>${l.desc}</span></button>`).join('')}</div>
-    </section>
-
-    <section class="grp">
-      <h3 class="grpT">Spelinställningar</h3>
-      <div class="swList">
-        ${sw('optLocate', s.locate, `Peka ut ${s.mode === 'auto' ? 'objektet' : 'gatan'} först`, 'Tryck på kartan innan du kör. Målet lyser inte under körningen.', pl || utP)}
-        ${sw('optVoice', s.voice, 'Larm med röst', 'Larmet läses upp')}
-      </div>
-    </section>
-
-    <details class="adv" id="advBox" ${advOpen ? 'open' : ''}><summary>Avancerat</summary>
-      <div class="advBody">
-        <div class="swList">
-          ${sw('optLm', s.lm !== false, 'Visa byggnader och platser', 'Skolor, vård, förskolor m.m. på kartan')}
-          ${sw('optAuto', s.autoStraight === true, 'Kör själv rakt fram', 'Stanna bara vid riktiga val', pl || utP)}
-          ${sw('optNewMenu', s.oldMenu !== true, 'Nya menyn', 'Ett val i taget, steg för steg')}
-        </div>
-        ${pl ? `<div class="stats"><div class="stat"><b>${store.roundBest && store.roundBest[bestKey] ? store.roundBest[bestKey].pct + ' %' : '–'}</b><span>${store.roundBest && store.roundBest[bestKey] ? 'rekord här, ' + fmtT(store.roundBest[bestKey].secs) : 'inget rekord här än'}</span></div><div class="stat"><b>${Object.values(store.streets).filter(r => r.loc && r.loc[r.loc.length - 1] === 'g').length}</b><span>rätt direkt senast</span></div></div>` : `<div class="stats"><div class="stat"><b>${store.runs}</b><span>utryckningar</span></div><div class="stat"><b>${avg}</b><span>snitt mot snabbaste väg</span></div></div>`}
-        ${PUBLIC_BUILD ? '' : '<button type="button" class="secondary" id="builderBtn" style="width:100%">Byggläge · placera objekt, byggnader och vägar</button>'}
-        <button type="button" class="secondary" id="editObjBtn" style="width:100%" ${s.mode === 'auto' && !PUBLIC_BUILD ? '' : 'hidden'}>Placera automatlarmen exakt (${doneCount()} av ${OBJ.size} klara · bara klara körs)</button>
-      </div>
-    </details>
-    </div>
-    </div>
-    </div>
-    <div class="menuFoot">
-      <div class="footSum"><b>${(MODES.find(m => m[0] === s.mode) || MODES[0])[1]}${ut ? ' · ' + (ut === 'omr' ? 'Pricka området' : ut === 'orter' ? 'Pricka orten' : uN + (uN === 1 ? ' adress' : ' adresser')) : ''}</b> · ${esc(areaTxt)}${pl || utP ? '' : ' · ' + LEVELS[s.level - 1].name}</div>
-      <button class="primary" id="startBtn" ${nCand || utP ? '' : 'disabled'}>${utP ? 'Skapa utmaning' : startTxt}</button>
-    </div>
-  `);
-  sheet.classList.add('menuSheet');
-  const ab = $('#advBox'); ab.ontoggle = () => { state.advOpen = ab.open; if (ab.open) requestAnimationFrame(() => ab.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); };
-  const segs = (id, key, num) => sheet.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => { s[key] = num ? +b.dataset.v : b.dataset.v; save(); state.menuScroll = ($('#mScroll') || sheet).scrollTop; menu(); });
-  $('#utmName').onchange = (e) => { s.utmName = e.target.value.trim(); save(); };
-  $('#utmPlay').onclick = () => { s.utmName = $('#utmName').value.trim(); save(); const r = chalParse($('#utmCode').value); if (typeof r === 'string') { $('#utmErr').textContent = r; $('#utmErr').hidden = false; return; } chalStart(r); };
-  sheet.querySelectorAll('#utmType button').forEach(b => b.onclick = () => { s.utmType = b.dataset.v; s.utmName = $('#utmName').value.trim(); save(); state.menuScroll = ($('#mScroll') || sheet).scrollTop; menu(); });
-  const setN = (n) => { n = Math.max(1, Math.min(25, n)); s.utmCount = n; save(); $('#utmCount').value = n; $('#utmCountTxt').textContent = n; $('#utmMinus').disabled = n <= 1; $('#utmPlus').disabled = n >= 25; const fs = sheet.querySelector('.footSum b'); if (fs) fs.textContent = 'Utmaning · ' + n + (n === 1 ? ' adress' : ' adresser'); const ms = sheet.querySelector('.mSum'); if (ms) ms.textContent = `Kör ${n === 1 ? 'ett larm' : n + ' larm'} och skicka koden. Den som klistrar in den får samma larm.`; };
-  const uN0 = () => +$('#utmCount').value;
-  $('#utmCount').onchange = (e) => setN(+e.target.value); $('#utmMinus').onclick = () => setN(uN0() - 1); $('#utmPlus').onclick = () => setN(uN0() + 1);
-  segs('areaSeg', 'area'); segs('distSeg', 'area'); segs('levelSeg', 'level', true); segs('modeSeg', 'mode');
-  const dt = sheet.querySelector('details.dists'); if (dt) dt.ontoggle = () => { state.distOpen = dt.open; };
-  if (state.distOpen && dt) dt.open = true;
-  if (state.menuScroll) { $('#mScroll').scrollTop = state.menuScroll; state.menuScroll = 0; }
-  const eb = $('#editObjBtn'); if (eb) eb.onclick = () => { state.bTab = 'obj'; state.bFitted = false; editList(); };
-  const bb2 = $('#builderBtn'); if (bb2) bb2.onclick = () => { state.bFitted = false; editList(); };
-  sheet.querySelectorAll('#autoSeg button').forEach(b => b.onclick = () => { s.autoDrive = b.dataset.v === '1'; save(); state.menuScroll = ($('#mScroll') || sheet).scrollTop; menu(); });
-  $('#optLocate').onchange = (e) => { s.locate = e.target.checked; save(); };
-  $('#optVoice').onchange = (e) => { s.voice = e.target.checked; save(); };
-  $('#optLm').onchange = (e) => { s.lm = e.target.checked; save(); requestDraw(); };
-  $('#optAuto').onchange = (e) => { s.autoStraight = e.target.checked; save(); };
-  $('#optNewMenu').onchange = (e) => { s.oldMenu = e.target.checked ? false : true; save(); state.wiz = null; if (location.hash !== '#dbg') menu(); };
-  $('#startBtn').onclick = (ev) => { const b = ev.currentTarget; if (b.disabled || state.starting) return; state.starting = true; b.disabled = true; b.classList.add('busy'); setTimeout(() => { state.starting = false; if (b.isConnected) { b.disabled = !(nCand || utP); b.classList.remove('busy'); } }, 900); s.mode === 'utm' ? chalCreate() : pl ? startPrick() : startAlarm(); };
-  if (BOARD_ON) { $('#changeName').onclick = () => nameGate(menu); $('#boardBtn').onclick = showBoard; }
+  wizMenu();
 }
 
-// ---------- Namn ----------
-function nameGate(then) {
-  state.mode = 'gate';
-  const cur = store.player && !store.player.anon ? store.player.name : '';
-  showSheet(`
-    <div class="eyebrow">Utryckning Härnösand</div>
-    <h1>Vem spelar?</h1>
-    <p class="lead">Med namn hamnar dina poäng på stationens topplista. Utan namn sparas resultaten bara på den här enheten.</p>
-    <form id="nameForm" novalidate>
-      <label class="eyebrow" for="playerName">Namn på topplistan</label>
-      <input class="textin" id="playerName" maxlength="20" autocomplete="nickname" value="${esc(cur)}" placeholder="Till exempel Kalle B">
-      <p id="nameErr" class="lead" style="color:var(--bad);font-size:13px" hidden>Skriv minst två tecken.</p>
-      <button class="primary" type="submit">Spela med namn</button>
-    </form>
-    <button class="secondary" id="anonBtn" type="button" style="width:100%;margin-top:8px">Spela utan namn</button>
-    <p class="lead" style="font-size:13px;margin-top:10px">Namnet syns för alla som har länken till spelet. Du kan byta det i menyn.</p>
-  `);
-  $('#nameForm').onsubmit = (ev) => {
-    ev.preventDefault();
-    const n = $('#playerName').value.replace(/\s+/g, ' ').trim();
-    if (n.length < 2) { $('#nameErr').hidden = false; $('#playerName').focus(); return; }
-    store.player = { name: n }; save(); pushBoard(); then();
-  };
-  $('#anonBtn').onclick = () => { store.player = { anon: true }; save(); then(); };
-}
-
-// ---------- Topplista ----------
-async function showBoard() {
-  state.mode = 'board';
-  const tab = state.boardTab || 'week'; const area = state.boardArea || store.settings.area;
-  const head = (body) => showSheet(`
-    <div class="grab"><div class="eyebrow">Topplista</div><button class="secondary" id="boardBack" style="padding:6px 10px">Tillbaka</button></div>
-    <h2>Stationens topplista</h2>
-    <div class="seg" id="boardSeg" style="margin:12px 0 6px">${[['week', 'Veckan', weekKey().replace('-v', ' v.')], ['all', 'Totalt', 'alla poäng'], ['prick', 'Pricka gatan', 'bästa omgång']].map(([v, l, d]) => `<button type="button" data-v="${v}" aria-pressed="${tab === v}"><b>${l}</b><span>${d}</span></button>`).join('')}</div>
-    ${tab === 'prick' ? `<div class="seg" id="boardArea" style="margin-bottom:6px">${AREAS.map(a => `<button type="button" data-v="${a.id}" aria-pressed="${area === a.id}"><b>${a.name}</b></button>`).join('')}</div>` : ''}
-    ${body}
-    <p class="lead" style="font-size:13px">Utryckning ger 2–10 poäng beroende på hur nära snabbaste vägen du kör, gånger 1,5 på Bekant och 2 på Van. Rätt utpekning ger upp till 3 extra. Varje ledtråd drar av 2. En omgång Pricka gatan ger halva poängen.</p>
-  `);
-  const wire = () => {
-    $('#boardBack').onclick = menu;
-    sheet.querySelectorAll('#boardSeg button').forEach(b => b.onclick = () => { state.boardTab = b.dataset.v; showBoard(); });
-    sheet.querySelectorAll('#boardArea button').forEach(b => b.onclick = () => { state.boardArea = b.dataset.v; showBoard(); });
-  };
-  head('<p class="lead">Hämtar topplistan…</p>'); wire();
-  await BOARD.init;
-  if (state.mode !== 'board') return;
-  if (BOARD.status !== 'ok') { head('<p class="lead">Topplistan fungerar bara när spelet öppnas via länken i Claude, inloggad.</p>'); wire(); return; }
-  let docs = [];
-  try { docs = (await BOARD.db.collection('scores').get()).docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() })); }
-  catch (e) { head('<p class="lead">Kunde inte hämta topplistan just nu. Försök igen om en stund.</p>'); wire(); return; }
-  if (state.mode !== 'board') return;
-  const wk = weekKey();
-  const rows = docs.map(d => ({ id: d.id, name: String(d.name || 'Okänd').slice(0, 20), v: tab === 'week' ? (d.weekKey === wk ? d.weekPts || 0 : 0) : tab === 'all' ? d.pts || 0 : ((d.prick || {})[area] || 0) }))
-    .filter(r => r.v > 0).sort((a, b) => b.v - a.v).slice(0, 50);
-  const unit = tab === 'prick' ? ' / 30' : ' p';
-  const body = rows.length ? `<ol class="board">${rows.map((r, i) => `<li class="${r.id === BOARD.uid ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="nm">${esc(r.name)}${r.id === BOARD.uid ? ' (du)' : ''}</span><span class="vl">${r.v}${unit}</span></li>`).join('')}</ol>`
-    : `<p class="lead">Ingen har poäng här än. ${store.player && !store.player.anon ? 'Spela ett larm så hamnar du först.' : 'Lägg till ett namn i menyn och spela ett larm så hamnar du först.'}</p>`;
-  head(body); wire();
-}
 
 // ---------- Larm ----------
 function startAlarm(fixed) {
@@ -3048,7 +2730,7 @@ function startAlarm(fixed) {
   state.opt = CORE.fastestTo(G, G.station, t.name);
   const showAddr = t.obj && level() <= 2 && !!t.addr;
   $('#alarmType').classList.toggle('score', !!state.rush);
-  $('#alarmType').textContent = (state.rush ? '\u2665'.repeat(state.rush.lives) + ' \u00b7 ' + state.rush.count + (state.rush.count === 1 ? ' klarad' : ' klarade') + ' \u00b7 ' : '') + (state.chal ? 'Utmaning ' + (state.chal.idx + 1) + ' av ' + state.chal.targets.length + ' · ' : '') + 'Larm · ' + state.incident + (showAddr ? ' · ' + t.addr : ''); $('#alarmStreet').textContent = dispName(t.name);
+  $('#alarmType').textContent = (state.chal ? 'Utmaning ' + (state.chal.idx + 1) + ' av ' + state.chal.targets.length + ' · ' : '') + 'Larm · ' + state.incident + (showAddr ? ' · ' + t.addr : ''); $('#alarmStreet').textContent = dispName(t.name);
   $('#hud').hidden = false; $('#clock').textContent = '0:00'; $('#clock').classList.remove('over');
   $('#alarm').classList.remove('flash'); void $('#alarm').offsetWidth; $('#alarm').classList.add('flash');
   if (t.obj) sayParts(['Larm.', 'Automatlarm.', t.oname + '.', showAddr ? t.addr + '.' : '', 'Jag upprepar:', t.oname + '.']);
@@ -3182,7 +2864,7 @@ function chalFinal() {
 // ---------- Tom karta mellan larmen (används av utmaningarna) ----------
 function clearMapIdle() {
   state.mode = 'idle'; state.car = null; state.trailPath = null; state.optPath = null; state.targetPath = null; state.showTarget = false; state.marks = []; state.labels = true;
-  $('#hud').hidden = true; $('#controls').hidden = true; $('#stopBtn').hidden = true; $('#choices').innerHTML = ''; $('#compass').hidden = true;
+  $('#hud').hidden = true; $('#controls').hidden = true; $('#choices').innerHTML = ''; $('#compass').hidden = true;
   view.rot = 0; view.anchorY = 0.32; view.cx = SX; view.cy = SY + 250; view.scale = Math.min(W, 520) / 1300; requestDraw();
 }
 
@@ -3238,7 +2920,7 @@ function onTap(sx, sy) {
     } else toast('Tryck på den lila gatan', C.purple);
     return;
   }
-  if (state.mode === 'drive' && state.choosing && roadArrowsOn() && state._ra) {
+  if (state.mode === 'drive' && state.choosing && state._ra) {
     let bi = -1, bd = 1e9; state._ra.pls.forEach((pl, i) => { const d = polyDist(sx, sy, pl); if (d < bd) { bd = d; bi = i; } });
     if (bi >= 0 && bd <= 28) choose(bi);
     return;
@@ -3427,7 +3109,7 @@ function editList() {
     // Armeringen sitter på själva knappen: ritas listan om (t.ex. byte av flik) börjar knappen om från "Rensa allt"
     const b = $('#edReset');
     if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Tryck igen för att rensa'; setTimeout(() => { if (b.isConnected && b.dataset.armed === '1') { b.dataset.armed = ''; b.textContent = 'Rensa allt'; } }, 3000); lockInput(); return; }
-    b.dataset.armed = ''; state.resetArm = false;
+    b.dataset.armed = '';
     for (const e of store.objAdd) { const k = 'obj:' + e[0]; OBJ.delete(k); G.streets.delete(k); const i = OBJECTS.findIndex(d => d[0] === e[0]); if (i >= 0) OBJECTS.splice(i, 1); }
     store.objPos = {}; store.objAdd = []; store.objHide = []; store.roadAdd = []; store.lmAdd = []; store.lmHide = []; save();
     rebuildRoads(); editList();
@@ -3669,7 +3351,7 @@ function endPrick() {
     const pb = store.prickBoard; if (!pb || pct > pb.pct || (pct === pb.pct && Math.round(secs) < pb.secs)) { store.prickBoard = { pct, secs: Math.round(secs) }; save(); }
     sbSubmit('prick', pct, { secs: Math.round(secs) });
   }
-  const earned = Math.round(score / 2); const pushP = addPoints(earned, bestKey, score);
+  const earned = Math.round(score / 2); addPoints(earned, bestKey, score);
   const xpR = gainXP([[isOrt() ? 'Pricka orten' : isOmr() ? 'Pricka området' : isAuto() ? 'Pricka automatlarm' : 'Pricka gatan', earned * 2.5 * [1, 1.5, 2][level() - 1]]]); // prick-lägena går fort: en fjärdedel av Utryckningens XP per poäng, så att Utryckning lönar sig mest per minut
   const dotCol = (it) => it.miss ? 'var(--purple)' : it.res === 'g' ? 'var(--good)' : it.res === 'o' ? 'var(--warn)' : 'var(--bad)';
   const lbl = (it) => it.miss ? 'miss' : it.res === 'g' ? 'direkt' : it.res === 'o' ? 'andra' : 'tredje';
@@ -3685,17 +3367,15 @@ function endPrick() {
     <p class="lead" id="savedLine" style="font-size:13px;font-weight:600">+${earned} poäng</p>
     <div class="row"><button class="secondary" id="menuBtn">Meny</button><button class="primary" id="againBtn" style="margin:0">Ny omgång</button></div>
   `, false, true);
-  pushP.then(ok => { const el = $('#savedLine'); if (el) el.textContent = savedText(earned, ok); });
   xpShow(xpR);
   $('#againBtn').onclick = () => startPrick(); $('#menuBtn').onclick = menu;
-  const peek = setPeek;
-  $('#peekBtn').onclick = () => peek(!sheetWrap.classList.contains('peek'));
+  $('#peekBtn').onclick = () => setPeek(!sheetWrap.classList.contains('peek'));
   sheet.querySelectorAll('#prickList button').forEach(b => b.onclick = () => {
     const it = R.items[+b.dataset.i]; const st = G.streets.get(it.name) || ORT.get(it.name); state.target = it.name;
     state.targetPath = streetPath(it.name); state.showTarget = true; state.targetColor = dotCol(it).includes('purple') ? C.purple : it.res === 'g' ? C.good : it.res === 'o' ? C.warn : C.bad;
     const pts = []; for (const id of st.edges) for (const p of G.edges[id].pts) pts.push(p);
     const pad = st.ort ? 4000 : 350; const cx = st.cx, cy = st.cy; pts.push([cx - pad, cy - pad], [cx + pad, cy + pad]);
-    if (W >= 900) fitBounds(pts, 70, 100, 50, 600); else { fitBounds(pts, 30, 90, 90); peek(true); }
+    if (W >= 900) fitBounds(pts, 70, 100, 50, 600); else { fitBounds(pts, 30, 90, 90); setPeek(true); }
     state.labels = true; requestDraw();
   });
   state.labels = false; requestDraw();
@@ -3827,14 +3507,13 @@ function masterEnd() {
     <div class="row"><button class="secondary" id="menuBtn">Meny</button><button class="primary" id="againBtn" style="margin:0">Spela igen</button></div>
   `, false, true);
   xpShow(gainXP([['Områdesmästaren', M.pts / 10]])); $('#againBtn').onclick = () => masterStart(n); $('#menuBtn').onclick = menu;
-  const peek = setPeek;
-  $('#peekBtn').onclick = () => peek(!sheetWrap.classList.contains('peek'));
+  $('#peekBtn').onclick = () => setPeek(!sheetWrap.classList.contains('peek'));
   sheet.querySelectorAll('#mList button').forEach(b => b.onclick = () => {
     const c = M.chains[+b.dataset.i]; const st = G.streets.get(c.street); if (!st) return; const r2 = c.res[1];
     state.target = c.street; state.targetPath = streetPath(c.street); state.showTarget = true;
     state.targetColor = !r2 || r2.miss ? C.purple : r2.res === 'g' ? C.good : r2.res === 'o' ? C.warn : C.bad;
     const pts = []; for (const id of st.edges) for (const p of G.edges[id].pts) pts.push(p); pts.push([st.cx - 300, st.cy - 300], [st.cx + 300, st.cy + 300]);
-    if (W >= 900) fitBounds(pts, 70, 100, 50, 600); else { fitBounds(pts, 30, 90, 90); peek(true); }
+    if (W >= 900) fitBounds(pts, 70, 100, 50, 600); else { fitBounds(pts, 30, 90, 90); setPeek(true); }
     state.labels = true; requestDraw();
   });
   state.labels = false; requestDraw();
@@ -3855,10 +3534,9 @@ function startDrive() {
   state.mode = 'drive'; state.arriving = false; state.marks = []; state.labels = level() === 1;
   // Har man pekat ut gatan först får målet inte lysa under körningen (det avslöjar var gatan är)
   state.showTarget = level() === 1 && !state.usedLocate; state.targetColor = C.red;
-  state.node = G.station; state.came = -1; state.queue = null; state.steps = []; state.autoRun = 0; state.stopNext = false; state.noRoute = false; state.simTime = 0; state.penalty = 0; state.uturns = 0;
+  state.node = G.station; state.came = -1; state.queue = null; state.steps = []; state.noRoute = false; state.simTime = 0; state.penalty = 0; state.uturns = 0;
   const n = G.nodes[G.station]; const ex = CORE.exitsFrom(G, G.station, -1); const ut = ex.find(s => s.e === G.utfartEdge) || ex[0];
   state.car = { x: n.x, y: n.y, h: ut ? CORE.stepHeading(G, ut) : 0 };
-  state.limit = Infinity; // tidsgränsen fanns bara på Expert (borttagen)
   state.hintLevel = 0; state.hintsUsed = 0; state.hintCost = 0; state.showCompass = false; state.showNext = false; state.gaveUp = false; state.autoFrom = null; state.autoPath = null;
   $('#hintActs').hidden = false; $('#locActs').hidden = true; updateHintBtn(); disarmGiveUp();
   $('#phase').textContent = 'körtid'; $('#clock').textContent = '0:00';
@@ -3879,7 +3557,7 @@ function atNode() {
   if (state.queue && state.queue.length) return go(state.queue.shift());
   const ringOpts = utfartOptions(nd, state.came) || ringOptions(nd, state.came);
   if (ringOpts) {
-    $('#stopBtn').hidden = true; state.autoRun = 0;
+   
     if (ringOpts.length === 1 && state.steps.length > 0) { state.queue = ringOpts[0].path.slice(1); return go(ringOpts[0].path[0]); }
     state.exits = ringOpts; state.choosing = true;
     if (ringOpts.some(o => o.lab)) setHint('Ut på E4<small>Norrut, söderut eller över vägen</small>'); else setHint('Rondell · välj avfart<small>' + (level() >= 3 ? 'Räknat från där du kör in' : 'Tryck på avfarten du vill ta') + '</small>');
@@ -3887,17 +3565,13 @@ function atNode() {
   }
   const exits = dedupeExits(nd, state.came, CORE.exitsFrom(G, nd, state.came));
   if (exits.length === 1 && state.steps.length > 0 && mergeStopAt(nd, state.came)) {
-    $('#stopBtn').hidden = true; state.autoRun = 0; state.forced = 0;
+    state.forced = 0;
     state.exits = exits; state.choosing = true;
     setHint('Stanna före E4<small>Tryck på pilen och kör ut när det är fritt</small>');
     renderChoices(); requestDraw(); return;
   }
   if (exits.length === 1 && state.steps.length > 0) { if (++state.forced > 60) { state.exits = exits; state.choosing = true; state.forced = 0; setHint('Välj väg<small>Tryck på pilen</small>'); renderChoices(); requestDraw(); return; } return go(exits[0]); }
   state.forced = 0;
-  const auto = state.stopNext ? null : autoContinue(exits);
-  state.stopNext = false;
-  if (auto && !state.gaveUp) { state.autoRun = (state.autoRun || 0) + 1; $('#stopBtn').hidden = false; $('#stopBtn').classList.remove('armed'); $('#stopBtn').innerHTML = 'Stanna<small>vid nästa korsning</small>'; return go(auto); }
-  $('#stopBtn').hidden = true;
   state.exits = exits; state.choosing = true;
   setHint(exits.length ? 'Välj väg<small>' + (level() >= 3 ? 'Inga gatunamn på den här nivån' : 'Tryck på en pil') + '</small>' : 'Återvändsgränd<small>Tryck Vänd</small>');
   renderChoices(); requestDraw();
@@ -3929,32 +3603,6 @@ function ringOptions(nd, came) {
   return opts.some(o => o.path) ? opts : null;
 }
 // Kör vidare själv när det inte finns något riktigt vägval
-function autoContinue(exits) {
-  if (store.settings.autoStraight !== true || !state.steps.length || state.came < 0) return null;
-  if ((state.autoRun || 0) > 40) return null;
-  const cur = G.edges[state.came]; if (!cur || cur.cls === 8) return null;
-  const tgt = G.streets.get(state.target);
-  if (tgt && exits.some(x => tgt.edges.includes(x.e) || tgt.nodes.has(x.to))) return null;
-  let major = exits.filter(x => G.edges[x.e].cls !== 8);
-  if (!major.length) return null;
-  if (major.length === 1) return major[0];
-  const last = state.steps[state.steps.length - 1];
-  const inH = CORE.stepHeading(G, { e: last.e, fwd: !last.fwd }, 25) + Math.PI;
-  const turn = (x) => { let d = CORE.stepHeading(G, x, 25) - inH; d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.abs(d); };
-  const minor = (x) => G.edges[x.e].cls >= 7;
-  // En avfart nästan rakt bakåt (t.ex. motsatt körbana på dubbelriktad led) är inget riktigt vägval
-  if (major.length > 1) { const ahead = major.filter(x => turn(x) < 2.7); if (ahead.length) major = ahead; if (major.length === 1) return major[0]; }
-  // samma gata rakt fram
-  let same = cur.name ? major.filter(x => G.edges[x.e].name === cur.name) : [];
-  if (same.length > 1) { const st = same.filter(x => turn(x) < 0.6); if (st.length === 1 && same.every(x => x === st[0] || turn(x) > 1.0)) same = st; }
-  if (same.length === 1) { const others = major.filter(x => x !== same[0]); if (others.every(minor)) return same[0];
-    // större väg rakt fram förbi mindre korsande gator – spelaren kan trycka Stanna
-    if (turn(same[0]) < 0.5 && others.every(x => minor(x) || G.edges[x.e].cls > cur.cls)) return same[0];
-    return null; }
-  // gatan byter namn men fortsätter rakt fram och övriga är bara små vägar
-  if (!same.length && cur.name) { const st = major.filter(x => turn(x) < 0.45); if (st.length === 1 && major.every(x => x === st[0] || minor(x))) return st[0]; }
-  return null;
-}
 function renderChoices() {
   const box = $('#choices'); box.innerHTML = '';
   if (!state.choosing) return;
@@ -3962,162 +3610,28 @@ function renderChoices() {
   let bestIdx = -1;
   if (state.showNext) { const r = CORE.fastestTo(G, state.node, state.target, state.came); const f = r && r.steps[0]; if (f) bestIdx = state.exits.findIndex(x => (x.path || [x]).every((p, j) => r.steps[j] && r.steps[j].e === p.e && r.steps[j].fwd === p.fwd)); }
   $('#uturn').classList.toggle('bestTurn', !!state.showNext && bestIdx < 0 && state.steps.length > 0);
-  const roadStyle = roadArrowsOn();
   state.exits.forEach((s, i) => {
     const e = G.edges[s.e]; const b = document.createElement('button'); b.className = 'choice' + (i === bestIdx ? ' best' : ''); b.type = 'button';
     const nm = s.e === G.utfartEdge ? 'Utfart mot E4' : s.e === G.yardEdge ? 'Mot Ådalsvägen' : (e.lbl || e.name || CORE.CLS_NAME[e.cls]);
     const ord = s.lab || (s.path ? (s.back ? 'Runt, tillbaka' : s.no + (s.no <= 2 ? ':a' : ':e') + ' avfarten') : '');
     b.setAttribute('aria-label', (ord ? ord + ', ' : '') + 'Kör mot ' + (level() <= 2 ? nm : 'riktning ' + (i + 1)));
     const lbl = s.lab ? s.lab : s.back ? (showName ? 'Tillbaka · ' + nm : 'Tillbaka') : (showName ? nm : ord);
-    if (roadStyle) {
-      b.classList.add('rchip'); if (!lbl) b.classList.add('notext'); b.style.setProperty('--rc', RA_COLORS[i % RA_COLORS.length]);
-      b.innerHTML = `<span class="rdot">${s.path && s.no ? s.no : ''}</span>${lbl ? `<span class="rtx">${esc(lbl)}</span>` : ''}`;
-    } else b.innerHTML = `<span class="disc">${s.path && s.no ? `<b class="rno">${s.no}</b>` : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 9h-4.5v9h-5v-9H5z" fill="currentColor"/></svg>`}</span>${lbl ? `<span class="lbl">${esc(lbl)}</span>` : ''}`;
+    b.classList.add('rchip'); if (!lbl) b.classList.add('notext'); b.style.setProperty('--rc', RA_COLORS[i % RA_COLORS.length]);
+    b.innerHTML = `<span class="rdot">${s.path && s.no ? s.no : ''}</span>${lbl ? `<span class="rtx">${esc(lbl)}</span>` : ''}`;
     b.onclick = () => choose(i);
     box.appendChild(b);
   });
   state._raBest = bestIdx; state._raManual = false;
-  if (roadStyle) { state._raSizes = null; requestDraw(); } else placeChoices();
+  state._raSizes = null; requestDraw();
 }
-function placeChoices() {
-  if (!state.choosing || !state.exits) return;
-  const btns = [...document.querySelectorAll('#choices .choice')];
-  if (!btns.length) return;
-  const N = G.nodes[state.node]; const [nx, ny] = N ? w2s(N.x, N.y) : w2s(state.car.x, state.car.y);
-  const [cx, cy] = w2s(state.car.x, state.car.y);
-  const R = Math.min(100, Math.max(72, Math.min(W, H) * 0.18));
-  const appTop = $('#app').getBoundingClientRect().top;
-  const hintTop = ($('#hint').getBoundingClientRect().top || H) - appTop;
-  const colR = $('#controls .btnrow') ? $('#controls .btnrow').getBoundingClientRect() : null;
-  const colTop = colR && colR.height ? colR.top - appTop : H, colLeft = colR && colR.width ? colR.left - $('#app').getBoundingClientRect().left : W;
-  // Undvik knappkolumnen till höger (zoom, fullskärm, bugg) längre ner på skärmen
-  const xMax = (y) => (y > colTop - 30 ? Math.min(W - 40, colLeft - 34) : W - 40);
-  const clampB = (b, x, y, rot) => { y = Math.max(120, Math.min(Math.min(H - 90, hintTop - 34), y)); x = Math.max(40, Math.min(xMax(y), x)); b.style.left = x + 'px'; b.style.top = y + 'px'; const svg = b.querySelector('svg'); if (svg) svg.style.transform = `rotate(${(rot + Math.PI / 2)}rad)`; };
-  const roadPts = (ex) => {
-    const chain = ex.path ? ex.path.slice() : [ex];
-    for (let k = 0; k < 10; k++) { const l = chain[chain.length - 1]; const nxx = CORE.exitsFrom(G, l.to, l.e); if (!nxx.length) break;
-      if (nxx.length === 1) { chain.push(nxx[0]); continue; }
-      const nm0 = G.edges[l.e].name; const same = nxx.filter(y => G.edges[y.e].name && G.edges[y.e].name === nm0);
-      if (same.length === 1) chain.push(same[0]); else break; }
-    const pts = []; for (const stp of chain) { const q = CORE.stepPts(G, stp); pts.push(...(pts.length ? q.slice(1) : q)); }
-    return pts.map(p => w2s(p[0], p[1]));
-  };
-  const interpAt = (sp, dist) => {
-    let acc = 0;
-    for (let i = 1; i < sp.length; i++) { const L = Math.hypot(sp[i][0] - sp[i - 1][0], sp[i][1] - sp[i - 1][1]) || 0.01; if (acc + L >= dist) { const t = (dist - acc) / L; return [sp[i - 1][0] + (sp[i][0] - sp[i - 1][0]) * t, sp[i - 1][1] + (sp[i][1] - sp[i - 1][1]) * t]; } acc += L; }
-    // bortom vägens slut: fortsätt rakt fram i vägens slutriktning (mätt över sista ~20 px, inte sista lilla biten)
-    const b = sp[sp.length - 1]; let ai = sp.length - 2, back = 0;
-    while (ai > 0 && back < 20) { back += Math.hypot(sp[ai + 1][0] - sp[ai][0], sp[ai + 1][1] - sp[ai][1]); ai--; }
-    const a = sp[Math.max(0, ai)];
-    const rot = Math.atan2(b[1] - a[1], b[0] - a[0]);
-    return [b[0] + Math.cos(rot) * (dist - acc), b[1] + Math.sin(rot) * (dist - acc)];
-  };
-  // Pilens riktning jämnas ut över ett litet fönster så en hackig polylinje inte vrider pilen fel
-  const pointAt = (sp, dist) => { const p = interpAt(sp, dist), q = interpAt(sp, dist + 16), p0 = interpAt(sp, Math.max(0, dist - 8));
-    return { x: p[0], y: p[1], rot: Math.atan2(q[1] - p0[1], q[0] - p0[0]) }; };
-  if (state.exits.some(x => x.path && (x.no != null || x.back))) {
-    // Riktig rondell: avfartspilarna i en ring runt infarten
-    const along = (sgm) => { const pts = CORE.stepPts(G, sgm); let last = null; for (const p of pts) { const [px, py] = w2s(p[0], p[1]); const d = Math.hypot(px - cx, py - cy); if (d > 6) last = [px, py]; if (d >= R * 0.8) break; } return last ? Math.atan2(last[1] - cy, last[0] - cx) : CORE.stepHeading(G, sgm, 30) + view.rot; };
-    let angs = state.exits.map(along);
-    const SEP = document.querySelector('#choices .lbl') ? 0.95 : 0.6;
-    const idx = angs.map((a, i) => i).sort((i, j) => angs[i] - angs[j]);
-    for (let k = 0; k < 4; k++) for (let m = 0; m < idx.length; m++) { const i = idx[m], j = idx[(m + 1) % idx.length]; if (i === j) continue; let d = angs[j] - angs[i]; while (d < 0) d += Math.PI * 2; if (d < SEP && idx.length > 1) { const push = SEP - d; angs[i] -= push / 2; angs[j] += push / 2; } }
-    btns.forEach((b, i) => { const a = angs[i]; clampB(b, cx + Math.cos(a) * R, cy + Math.sin(a) * R, a); });
-    return;
-  }
-  const MIN = document.querySelector('#choices .lbl') ? 78 : 54;
-  const ckey = state.node + '|' + state.came + '|' + (state.steps ? state.steps.length : 0) + '|' + state.exits.length;
-  const CYc = (y) => Math.max(120, Math.min(Math.min(H - 90, hintTop - 34), y)), CXc = (x, y) => Math.max(40, Math.min(xMax(y == null ? 0 : y), x));
-  const finish = (pts) => {
-    // Skjut isär knappar som kolliderar efter skärmklämningen (t.ex. vid utzoomning)
-    const bx = pts.map(p2 => { const y = CYc(p2.y); return { x: CXc(p2.x, y), y, rot: p2.rot }; });
-    for (let r = 0; r < 30; r++) { let m = false;
-      for (let i = 0; i < bx.length; i++) for (let j = i + 1; j < bx.length; j++) {
-        const dx = bx[j].x - bx[i].x, dy = bx[j].y - bx[i].y; const d = Math.hypot(dx, dy);
-        if (d >= MIN - 6) continue; const ux = d ? dx / d : 1, uy = d ? dy / d : 0, push = (MIN - 6 - d) / 2 + 1;
-        bx[i].y = CYc(bx[i].y - uy * push); bx[i].x = CXc(bx[i].x - ux * push, bx[i].y);
-        bx[j].y = CYc(bx[j].y + uy * push); bx[j].x = CXc(bx[j].x + ux * push, bx[j].y); m = true; }
-      if (!m) break; }
-    state._pc = Object.assign(state._pc || {}, { pos: bx.map(q => [Math.round(q.x), Math.round(q.y), +q.rot.toFixed(2)]), anchored: !!(state._anc && state._anc.key === ckey) });
-    btns.forEach((b, i) => clampB(b, bx[i].x, bx[i].y, bx[i].rot));
-  };
-  // Pilarna låses till punkter på kartan när valet visas: zoomar/vrider man följer de vägen i stället för att glida
-  // (de första 600 ms räknas de om, medan kameran fortfarande svänger in efter stoppet)
-  if (state._anc && state._anc.key === ckey && state._anc.pts.length === btns.length && performance.now() - state._anc.t0 > 600) {
-    return finish(state._anc.pts.map(a => { const [sx, sy] = w2s(a.x, a.y); return { x: sx, y: sy, rot: a.rot + view.rot }; }));
-  }
-  // Utfarten mot E4: Norrut och Söderut på E4 åt var sitt håll, Mot Coop på andra sidan E4 (bortom Norrut-körfältet)
-  const iC = state.exits.findIndex(x => x.lab === 'Mot Coop'), iN = state.exits.findIndex(x => x.lab === 'Norrut E4'), iS = state.exits.findIndex(x => x.lab === 'Söderut E4');
-  if (iC >= 0 && iN >= 0 && iS >= 0 && state.exits.length === 3) {
-    const spsU = state.exits.map(roadPts);
-    const D = R * 1.05;
-    const pN = pointAt(spsU[iN], D), pS = pointAt(spsU[iS], D), pCraw = pointAt(spsU[iC], D);
-    // "Ovanför" Norrut = vinkelrätt mot E4, på sidan bort från bilen (över vägen)
-    let dx = Math.cos(pN.rot + Math.PI / 2), dy = Math.sin(pN.rot + Math.PI / 2);
-    if (dx * (pN.x - cx) + dy * (pN.y - cy) < 0) { dx = -dx; dy = -dy; }
-    const dl = 1;
-    const off = MIN * 1.12;
-    const pC = { x: pN.x + dx / dl * off, y: pN.y + dy / dl * off, rot: pCraw.rot };
-    const posU = []; posU[iN] = pN; posU[iS] = pS; posU[iC] = pC;
-    state._pc = { utfart: true };
-    state._anc = { key: ckey, t0: state._anc && state._anc.key === ckey ? state._anc.t0 : performance.now(), pts: posU.map(p2 => { const [wx, wy] = s2w(p2.x, p2.y); return { x: wx, y: wy, rot: p2.rot - view.rot }; }) };
-    return finish(posU);
-  }
-  // Vanlig korsning: pilen ligger R punkter ut längs sin väg, mätt på skärmen.
-  // Är vägen kortare på skärmen fortsätter pilen i vägens riktning, så det blir en solfjäder runt korsningen
-  // som ser likadan ut i alla zoomlägen. Krockar två pilar flyttas den med mest väg kvar längre ut.
-  const sps = state.exits.map(roadPts);
-  const lens = sps.map(sp => { let L = 0; for (let i = 1; i < sp.length; i++) L += Math.hypot(sp[i][0] - sp[i - 1][0], sp[i][1] - sp[i - 1][1]); return L; });
-  const dists = state.exits.map((x, i) => {
-    if (!x.path || !x.path.length) return R;
-    // Val med fast väg (t.ex. Mot Coop): lägg knappen bortom första vägbiten, på rätt sida
-    const pts2 = CORE.stepPts(G, x.path[0]).map(p2 => w2s(p2[0], p2[1]));
-    let L = 0; for (let k = 1; k < pts2.length; k++) L += Math.hypot(pts2[k][0] - pts2[k - 1][0], pts2[k][1] - pts2[k - 1][1]);
-    if (x.lab === 'Mot Coop') return L + 42; // precis på andra sidan, nerför vägen bredvid E4
-    return Math.max(R, Math.min(L + 26, R * 2.4));
-  });
-  const pos = sps.map((sp, i) => pointAt(sp, dists[i]));
-  const maxD = R * 2.6;
-  // Två vägar som lämnar korsningen nästan parallellt (t.ex. Södra vägen och Viktoriagatan):
-  // lägg pilarna efter varandra längs vägen i stället för att knuffa dem växelvis
-  for (let i = 0; i < pos.length; i++) for (let j = i + 1; j < pos.length; j++) {
-    if (Math.hypot(pos[i].x - pos[j].x, pos[i].y - pos[j].y) >= MIN) continue;
-    const ai = Math.atan2(pos[i].y - ny, pos[i].x - nx), aj = Math.atan2(pos[j].y - ny, pos[j].x - nx);
-    let dd = ai - aj; dd = Math.abs(Math.atan2(Math.sin(dd), Math.cos(dd)));
-    if (dd < 0.5) { const k = lens[j] > lens[i] ? j : i; const o = k === i ? j : i; dists[k] = Math.min(maxD, dists[o] + MIN + 14); pos[k] = pointAt(sps[k], dists[k]); }
-  }
-  for (let r = 0; r < 40; r++) {
-    let moved = false;
-    for (let i = 0; i < pos.length; i++) for (let j = i + 1; j < pos.length; j++) {
-      if (Math.hypot(pos[i].x - pos[j].x, pos[i].y - pos[j].y) >= MIN) continue;
-      let k = (lens[j] - dists[j]) > (lens[i] - dists[i]) ? j : i;
-      if (dists[k] + 14 > maxD) k = k === i ? j : i;
-      if (dists[k] + 14 > maxD) {
-        // båda är så långt ut det går: vinkla isär dem runt korsningen
-        const ai = Math.atan2(pos[i].y - ny, pos[i].x - nx), aj = Math.atan2(pos[j].y - ny, pos[j].x - nx);
-        let d2 = aj - ai; d2 = Math.atan2(Math.sin(d2), Math.cos(d2)); const push = 0.1 * (d2 >= 0 ? 1 : -1);
-        const ri = Math.hypot(pos[i].x - nx, pos[i].y - ny) || R, rj = Math.hypot(pos[j].x - nx, pos[j].y - ny) || R;
-        pos[i] = { x: nx + Math.cos(ai - push) * ri, y: ny + Math.sin(ai - push) * ri, rot: pos[i].rot };
-        pos[j] = { x: nx + Math.cos(aj + push) * rj, y: ny + Math.sin(aj + push) * rj, rot: pos[j].rot };
-      } else { dists[k] += 14; pos[k] = pointAt(sps[k], dists[k]); }
-      moved = true;
-    }
-    if (!moved) break;
-  }
-  state._pc = { lens: lens.map(Math.round), dists: dists.map(Math.round) };
-  // Spara som kartpunkter (världskoordinater) så de sitter fast vid zoom
-  state._anc = { key: ckey, t0: state._anc && state._anc.key === ckey ? state._anc.t0 : performance.now(), pts: pos.map(p2 => { const [wx, wy] = s2w(p2.x, p2.y); return { x: wx, y: wy, rot: p2.rot - view.rot }; }) };
-  finish(pos);
-}
-$('#stopBtn').onclick = () => { state.stopNext = true; $('#stopBtn').classList.add('armed'); $('#stopBtn').innerHTML = 'Stannar<small>vid nästa korsning</small>'; };
-function choose(i) { if (!state.choosing) return; state.choosing = false; state.autoRun = 0; if (state.showCompass) { state.showCompass = false; $('#compass').hidden = true; } state.showNext = false; $('#stopBtn').hidden = true; $('#uturn').classList.remove('bestTurn'); $('#choices').innerHTML = ''; const x = state.exits[i]; if (!x) { state.choosing = true; return; } if (x.path) { state.queue = x.path.slice(1); go(x.path[0]); } else { state.queue = null; go(x); } }
+function choose(i) { if (!state.choosing) return; state.choosing = false; if (state.showCompass) { state.showCompass = false; $('#compass').hidden = true; } state.showNext = false; $('#uturn').classList.remove('bestTurn'); $('#choices').innerHTML = ''; const x = state.exits[i]; if (!x) { state.choosing = true; return; } if (x.path) { state.queue = x.path.slice(1); go(x.path[0]); } else { state.queue = null; go(x); } }
 $('#uturn').onclick = () => {
   if (state.mode !== 'drive' || !state.choosing) return;
   const last = state.steps[state.steps.length - 1];
   if (!last) return;
   const e = G.edges[last.e]; const back = { e: last.e, fwd: !last.fwd, to: last.fwd ? e.a : e.b };
   if (e.ow && state.exits && state.exits.length) { toast('Enkelriktat · kan inte vända', C.amber); return; }
-  state.autoRun = 0;
+ 
   if (state.showCompass) { state.showCompass = false; $('#compass').hidden = true; } state.showNext = false;
   $('#uturn').classList.remove('bestTurn'); state.penalty += 15; state.uturns++; state.choosing = false; $('#choices').innerHTML = ''; toast('Vänder · +15 s', C.amber); go(back);
 };
@@ -4152,7 +3666,7 @@ $('#hintBtn').onclick = () => {
   if (state.hintLevel === 2) { state.showNext = true; if (state.choosing) renderChoices(); }
   if (state.hintLevel === 3) { state.showTarget = true; state.targetColor = C.amber; }
   toast(`${h.name} · +${h.cost} s`, C.amber); setHint(`${h.name}<small>${h.text}</small>`);
-  const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.toggle('over', shown > state.limit);
+  const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.remove('over');
   updateHintBtn(); requestDraw();
 };
 let armTimer = null;
@@ -4161,7 +3675,7 @@ $('#giveUp').onclick = () => {
   if (state.mode !== 'drive' || state.gaveUp || state.arriving) return;
   const b = $('#giveUp');
   if (!b.classList.contains('armed')) { b.classList.add('armed'); b.innerHTML = 'Säker?<small>tryck igen</small>'; armTimer = setTimeout(disarmGiveUp, 3500); lockInput(); return; }
-  clearTimeout(armTimer); state.gaveUp = true; state.autoFrom = state.steps.length; state.stopNext = false; $('#stopBtn').hidden = true;
+  clearTimeout(armTimer); state.gaveUp = true; state.autoFrom = state.steps.length;
   b.disabled = true; b.innerHTML = 'Gav upp<small>vägen visas</small>'; $('#hintBtn').disabled = true;
   state.showTarget = true; state.targetColor = C.amber; state.showCompass = false;
   toast('Spelet kör resten', C.purple);
@@ -4193,7 +3707,7 @@ function dedupeExits(nd, came, exits) {
     const key = nm + '|' + endOf(x);
     const prev = best.get(key);
     if (!prev) best.set(key, x);
-    else { dropped = true; let keep = prev, dropX = x; try { if (turn(x) < turn(prev)) { keep = x; } } catch (err) {} best.set(key, keep); }
+    else { dropped = true; let keep = prev; try { if (turn(x) < turn(prev)) { keep = x; } } catch (err) {} best.set(key, keep); }
   }
   return dropped ? [...best.values()] : exits;
 }
@@ -4241,7 +3755,7 @@ function go(step) {
     state.car.x = x; state.car.y = y; state.car.h = h; view.cx = x; view.cy = y;
     { let target = -Math.PI / 2 - h, dr = target - view.rot; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI; view.rot += dr * 0.15; }
     state.simTime = baseTime + e.t * tFrac * f;
-    const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.toggle('over', shown > state.limit);
+    const shown = state.simTime + state.penalty; $('#clock').textContent = fmt(shown); $('#clock').classList.remove('over');
     state.trailPath = stepsPath(prevSteps, pts.slice(0, i).concat([[x, y]]));
     draw();
     if (f < 1) anim = requestAnimationFrame(tick); else if (final) { arrivePause(); } else { state.node = step.to; atNode(); }
@@ -4278,7 +3792,7 @@ function placeCompass() {
   }
   [px, py] = clampXY(px, py);
   // Kompassen får inte ligga ovanpå vägpilarna, deras namnskyltar eller bilen: glid längs kanten tills det är fritt
-  if (state.choosing && state._ra && roadArrowsOn()) {
+  if (state.choosing && state._ra) {
     const hw = bw / 2 + 6, hh = bh / 2 + 6;
     const segHit = (x, y) => state._ra.pls.some(pl => { for (let k2 = 1; k2 < pl.length; k2++) { const [x0, y0] = pl[k2 - 1], [x1, y1] = pl[k2]; const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 4));
       for (let t = 0; t <= n; t++) { const xx = x0 + (x1 - x0) * t / n, yy = y0 + (y1 - y0) * t / n; if (Math.abs(xx - x) < hw && Math.abs(yy - y) < hh) return true; } } return false; });
@@ -4303,7 +3817,7 @@ function placeCompass() {
 const ARRIVE_PAUSE_MS = 1500;
 function arrivePause() {
   const gen = state.gen; state.arriving = true; state.choosing = false;
-  $('#choices').innerHTML = ''; $('#hintActs').hidden = true; $('#stopBtn').hidden = true; $('#compass').hidden = true;
+  $('#choices').innerHTML = ''; $('#hintActs').hidden = true; $('#compass').hidden = true;
   state.showTarget = true; state.targetColor = C.red;
   setHint(`Framme vid ${esc(dispName(state.target))}<small>Facit kommer strax</small>`);
   say(`Framme vid ${dispName(state.target)}.`);
@@ -4318,7 +3832,7 @@ function arrivePause() {
 function arrive(spoken) {
   state.arriving = false;
   resetMenuTop();
-  $('#stopBtn').hidden = true;
+ 
   state.mode = 'result'; state.choosing = false; $('#choices').innerHTML = ''; $('#compass').hidden = true; $('#controls').hidden = true;
   $('#hintActs').hidden = true; state.autoPath = null;
   const total = state.simTime + state.penalty; const opt = state.opt.time;
@@ -4328,7 +3842,7 @@ function arrive(spoken) {
     const rec = store.streets[state.target] || (store.streets[state.target] = { n: 0, loc: [], eff: [] });
     rec.n++; rec.eff.push(eff); rec.eff = rec.eff.slice(-6); if (state.locResult) { rec.loc.push(state.locResult); rec.loc = rec.loc.slice(-6); }
     store.runs++; store.effSum += eff; if (state.locResult === 'g') store.greens++; dailyCount(curMode() === 'auto' ? 'auto' : 'drive'); save();
-    state.earned = drivePoints(); state.pushP = addPoints(state.earned);
+    state.earned = drivePoints(); addPoints(state.earned);
     state.xpRes = gainXP([[OBJ.has(state.target) ? 'Automatlarm' : 'Utryckning', state.earned * 10], [OBJ.has(state.target) ? 'Nytt objekt' : 'Ny gata', rec.n === 1 && !state.gaveUp && eff >= 50 ? 50 : 0]], 'd:' + state.target);
     if (store.runs > 0) sbSubmit('drive', Math.round(store.effSum / store.runs), { runs: store.runs });
   }
@@ -4381,7 +3895,7 @@ function drivePoints() {
   if (state.gaveUp) return loc;
   const e = state.eff; let base = e >= 97 ? 10 : e >= 85 ? 7 : e >= 65 ? 4 : 2;
   base = Math.max(0, base - 2 * (state.hintsUsed || 0));
-  return Math.round(base * [1, 1.5, 2, 3][level() - 1] + loc);
+  return Math.round(base * [1, 1.5, 2][level() - 1] + loc);
 }
 function showResult() {
   const optNames = new Set(state.optList.map(s => s.name));
@@ -4392,12 +3906,11 @@ function showResult() {
   const locChip = state.locResult ? `<span class="chip"><span class="dot" style="background:${state.locResult === 'g' ? 'var(--good)' : state.locResult === 'o' ? 'var(--warn)' : 'var(--bad)'}"></span>Utpekning: ${state.locResult === 'g' ? 'rätt direkt' : state.locResult === 'o' ? 'rätt på andra' : 'miss'}</span>` : '';
   const recChip = state.recall ? `<span class="chip">Minne: ${state.recall.ok} av ${state.recall.of} i rätt ordning${state.recall.wrong ? ` · ${state.recall.wrong} fel` : ''}</span>` : '';
   const hintChip = state.hintsUsed ? `<span class="chip"><span class="dot" style="background:var(--amber)"></span>${state.hintsUsed} ledtråd${state.hintsUsed > 1 ? 'ar' : ''} · +${state.hintCost} s</span>` : '';
-  const limitChip = state.limit < Infinity ? `<span class="chip"><span class="dot" style="background:${state.total <= state.limit ? 'var(--good)' : 'var(--bad)'}"></span>Tidsgräns ${fmt(state.limit)}${state.total <= state.limit ? ' klarad' : ' överskriden'}</span>` : '';
   showSheet(`
     <div class="grab"><div class="eyebrow">Framme · ${esc(state.incident)}</div><button class="secondary" id="peekBtn" style="padding:6px 10px">Visa kartan</button></div>
     <h2>${esc(dispName(state.target))}</h2>${OBJ.has(state.target) ? `<p class="lead" style="margin:-4px 0 6px">${esc(OBJ.get(state.target).addr)}</p>` : ''}
     ${resRing(state.gaveUp ? '–' : eff + ' %', state.gaveUp ? 0 : eff / 100, state.gaveUp ? 'var(--purple)' : effCol, verdict, `${state.gaveUp ? (OBJ.has(state.target) ? 'Objektet kommer tillbaka snart' : 'Gatan kommer tillbaka snart') : 'Din tid ' + fmt(state.total)} · snabbaste ${fmt(state.opt.time)}${state.uturns ? ` · ${state.uturns} vändning${state.uturns > 1 ? 'ar' : ''}` : ''}`)}
-    <div class="row" style="gap:6px;flex:none">${locChip}${hintChip}${recChip}${limitChip}</div>
+    <div class="row" style="gap:6px;flex:none">${locChip}${hintChip}${recChip}</div>
     <div class="routes">
       <div><h3><span class="legend" style="background:var(--route)"></span>Din väg</h3><ol>${state.myList.map(s => li(s, true)).join('')}${state.gaveUp ? `<li class="goal" style="color:var(--purple)"><span>Gav upp här</span></li>${state.shownList.map(x => `<li style="color:var(--purple)"><span>${esc(x.name)}</span><span class="m">visad</span></li>`).join('')}` : ''}${goal}</ol></div>
       <div><h3><span class="legend" style="background:var(--opt)"></span>Snabbaste</h3><ol>${state.optList.map(s => li(s, false)).join('')}${goal}</ol></div>
@@ -4406,7 +3919,6 @@ function showResult() {
     <p class="lead" id="savedLine" style="font-size:13px;font-weight:600">+${state.earned} poäng</p>
     <div class="row"><button class="secondary" id="menuBtn">Meny</button><button class="primary" id="againBtn" style="margin:0">Nytt larm</button></div>
   `, false, true);
-  state.pushP.then(ok => { const el = $('#savedLine'); if (el) el.textContent = savedText(state.earned, ok); });
   if (state.xpRes) { xpShow(state.xpRes); state.xpRes = null; }
   $('#againBtn').onclick = () => startAlarm(); $('#menuBtn').onclick = menu;
   $('#peekBtn').onclick = () => setPeek(!sheetWrap.classList.contains('peek'));
@@ -4417,17 +3929,17 @@ function showResult() {
 resize();
 try { ortoInit(); } catch (e) {}
 {
-  const startMenu = () => { if (BOARD_ON && !store.player) nameGate(menu); else menu(); };
+  const startMenu = () => menu();
   try { startMenu(); } catch (e) {
     // Menyn gick inte att visa med de sparade inställningarna: återställ inställningarna (statistik och rekord behålls) och försök igen
     try { console.error(e); } catch (x) {}
-    store.settings = { mode: 'drive', area: 'nara', level: 1, locate: false, voice: true, autoDrive: true, autoStraight: false, steerV2: true }; state.wiz = null; save();
+    store.settings = { mode: 'drive', area: 'nara', level: 1, locate: false, voice: true, autoDrive: true }; state.wiz = null; save();
     startMenu();
   }
 }
 try { if (!PUBLIC_BUILD && sessionStorage.getItem('uh-open-editor')) { sessionStorage.removeItem('uh-open-editor'); store.settings.mode = 'auto'; editList(); } } catch (e) {}
 setInterval(() => { if (state.mode === 'drive' && state.choosing) draw(); }, 260);
-if (location.hash === '#dbg' || location.hash === '#dbgw') window.__uh = { view, draw, ORTO, ortoOn, get base() { return base; }, baseCv, ortoCv, baseFits, get G() { return G; }, state, hideSheet, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu, rushStart: (k) => rushStart(k), rushEnd: (w) => rushEnd(w), chalStart: (c) => chalStart(c), chalFinal: () => chalFinal(), friendSheet: () => friendSheet(), socialRefresh: () => socialRefresh(), chalCode,
+if (location.hash === '#dbg' || location.hash === '#dbgw') window.__uh = { view, draw, ORTO, ortoOn, get base() { return base; }, baseCv, ortoCv, baseFits, get G() { return G; }, state, hideSheet, streetPath, choose: (i) => choose(i), startAlarm: (n) => startAlarm(n), ringOptions: (a, b) => ringOptions(a, b), cand: (a) => candidates(a, false).map(c => c.name), N: DATA.n, chalParse, chalCode, AREAS, DISTRICTS, menu, rushStart: (k) => rushStart(k), rushEnd: (w) => rushEnd(w), chalStart: (c) => chalStart(c), chalFinal: () => chalFinal(), friendSheet: () => friendSheet(), socialRefresh: () => socialRefresh(),
   // testhjälp: ställ bilen vid en korsning (kommer via kant 'came') och visa valen där
   jn: (node, came, fwd) => { cancelAnimationFrame(anim); state.mode = 'drive'; state.gaveUp = false; state.queue = null; state.round = null;
     const e = G.edges[came]; const step = { e: came, fwd, to: node }; const pts = CORE.stepPts(G, step); const a = pts[pts.length - 2] || pts[0], b = pts[pts.length - 1];
