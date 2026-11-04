@@ -1,0 +1,16 @@
+# Håller Supabase-projektet (gratisnivån) vaket: gratisprojekt pausas efter en veckas inaktivitet.
+# Hämtar topplistan en gång om dagen med den publika nyckeln (samma som spelet använder).
+name: Håll topplistan vaken
+on:
+  schedule:
+    - cron: '17 4 * * *'   # varje dag 04:17 UTC
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hämta topplistan
+        run: |
+          curl -sS -f "https://wrqgcebhygmomlfedlxl.supabase.co/rest/v1/leaderboard?select=name&limit=1" \
+            -H "apikey: sb_publishable_3ZPpXTQgljIU1cdB2NVTPQ_vnJwCCQo" \
+            -H "Authorization: Bearer sb_publishable_3ZPpXTQgljIU1cdB2NVTPQ_vnJwCCQo"
