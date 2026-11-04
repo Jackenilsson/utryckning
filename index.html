@@ -52,8 +52,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 #alarm .txt{padding:8px 12px;min-width:0}
 #alarmType{font-family:var(--fDisplay);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--red);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #alarmType.score{letter-spacing:.02em;font-size:11.5px}
-#alarmStreet{font-family:var(--fDisplay);font-weight:700;font-size:28px;line-height:1.05;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:break-word}
-@media (max-width:480px){#alarmStreet{font-size:22px}}
+#alarmStreet{font-family:var(--fDisplay);font-weight:700;font-size:28px;line-height:1.05;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:normal;word-break:normal}
+@media (max-width:480px){#alarmStreet{font-size:clamp(16px,5vw,22px)}}
 #menuTop{position:relative;z-index:3;pointer-events:auto;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:6px 10px;border:1px solid var(--line);color:var(--ink);font-size:20px;line-height:1;width:64px;overflow:hidden}
 #menuTop b{font-family:var(--fDisplay);font-size:14px;letter-spacing:.04em;text-transform:uppercase}
 #menuTop.armed{font-size:15px;font-family:var(--fDisplay);font-weight:700}
@@ -228,7 +228,7 @@ p{margin:0 0 10px;line-height:1.45;max-width:62ch}
 @media (prefers-reduced-motion:reduce){.flash{animation:none}.sheet{transition:none}}
 .textin{width:100%;min-height:var(--tap);box-sizing:border-box;font:inherit;font-size:18px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sheet);color:var(--ink);margin:6px 0 4px}
 .toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-index:8;font-family:var(--fDisplay);font-weight:700;font-size:clamp(18px,5vw,26px);line-height:1.15;padding:10px 18px;border-radius:10px;color:#fff;box-shadow:var(--shadow);pointer-events:none;box-sizing:border-box;width:max-content;max-width:calc(100vw - 32px);text-align:center;overflow-wrap:anywhere}
-.attrib{position:absolute;right:max(6px,env(safe-area-inset-right,0px));bottom:max(2px,env(safe-area-inset-bottom,0px));font-size:10px;color:var(--muted);pointer-events:none;opacity:.85}
+.attrib{position:absolute;left:max(6px,env(safe-area-inset-left,0px));right:max(6px,env(safe-area-inset-right,0px));bottom:max(1px,env(safe-area-inset-bottom,0px));font-size:10px;line-height:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);pointer-events:none;opacity:.85}
 
 /* ===== Meny (startsida) ===== */
 /* Avståndsskala: 4 · 8 · 12 · 16 · 24 */
@@ -1428,6 +1428,7 @@ function drawLandmarks() {
     ctx.fillStyle = '#fff'; ctx.font = '700 10px Barlow, Segoe UI, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(LM_SYM[l.cat] || '', sx, sy + 0.5);
     placed.push([sx, sy]);
     if (showName) {
+      if (state.mode === 'drive' && level() >= 2) { if (l.hasStreet == null) { const nm = l.name.toLowerCase(); l.hasStreet = [...G.streets.keys()].some(k => !k.includes(':') && k.length > 4 && nm.includes(k.toLowerCase())); } if (l.hasStreet) continue; }
       ctx.font = '600 12px Barlow, Segoe UI, sans-serif'; ctx.textAlign = 'left';
       const tw = ctx.measureText(l.name).width; if (placed.some(p => p[2] && sx + 12 < p[0] + p[2] && sx + 12 + tw > p[0] && Math.abs(p[1] - sy) < 14)) continue;
       ctx.strokeStyle = C.halo; ctx.lineWidth = 3.5; ctx.strokeText(l.name, sx + 12, sy); ctx.fillStyle = LM_COL[l.cat] || C.label; ctx.fillText(l.name, sx + 12, sy);
@@ -2536,7 +2537,7 @@ function xpSheet() {
     <h3 class="grpT">Så får du XP</h3>
     <div class="xpHow">
       <div><b>Utryckning och automatlarm</b><span>20–130 XP per larm på Nybörjare, mer ju närmare snabbaste vägen</span></div>
-      <div><b>Pricka gatan, området, orten</b><span>upp till 40 XP per omgång på Nybörjare</span></div>
+      <div><b>Pricka gatan, området, orten</b><span>knappt 4 XP per rätt direkt, mindre vid andra och tredje försöket</span></div>
       <div><b>Blixten, En chans, Områdesmästaren</b><span>10 XP per gata, 1 XP per 10 poäng</span></div>
       <div><b>Svårighetsgrad</b><span>Bekant ×1,5 · Van ×2</span></div>
       <div><b>Ny gata</b><span>+50 XP första gången du kör fram till en gata</span></div>
@@ -3346,7 +3347,7 @@ function nextPrick() {
   state.target = name; state.lastTarget = name; state.marks = []; state.locResult = null;
   state.targetPath = (OMR.has(name) || ORT.has(name) || OBJ.has(name)) ? null : streetPath(name); state.showTarget = false; state.targetColor = null;
   const hit = R.items.filter(i => !i.miss).length;
-  if (state.rush) rushHud(); else { $('#alarmType').classList.add('score'); $('#alarmType').textContent = `Kvar ${R.total - R.idx} · Rätt ${hit} · Fel ${R.wrong || 0}`; }
+  if (state.rush) rushHud(); else { $('#alarmType').classList.add('score'); $('#alarmType').textContent = `${R.total - R.idx} kvar · ${hit} ✓ · ${R.wrong || 0} ✗`; }
   $('#alarmStreet').textContent = dispName(name);
   $('#alarm').classList.remove('flash'); void $('#alarm').offsetWidth; $('#alarm').classList.add('flash');
   say(dispName(name));
@@ -3367,7 +3368,7 @@ function endPrick() {
     sbSubmit('prick', pct, { secs: Math.round(secs) });
   }
   const earned = Math.round(score / 2); addPoints(earned, bestKey, score);
-  const xpR = gainXP([[isOrt() ? 'Pricka orten' : isOmr() ? 'Pricka området' : isAuto() ? 'Pricka automatlarm' : 'Pricka gatan', earned * 2.5 * [1, 1.5, 2][level() - 1]]]); // prick-lägena går fort: en fjärdedel av Utryckningens XP per poäng, så att Utryckning lönar sig mest per minut
+  const xpR = gainXP([[isOrt() ? 'Pricka orten' : isOmr() ? 'Pricka området' : isAuto() ? 'Pricka automatlarm' : 'Pricka gatan', earned * 2.5]]); // svårighetsgraden väljs inte i pricklägena, så den påverkar inte XP här. Prick-lägena går fort: en fjärdedel av Utryckningens XP per poäng, så att Utryckning lönar sig mest per minut
   const dotCol = (it) => it.miss ? 'var(--purple)' : it.res === 'g' ? 'var(--good)' : it.res === 'o' ? 'var(--warn)' : 'var(--bad)';
   const lbl = (it) => it.miss ? 'miss' : it.res === 'g' ? 'direkt' : it.res === 'o' ? 'andra' : 'tredje';
   const greens = R.items.filter(i => i.res === 'g' && !i.miss).length;
