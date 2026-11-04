@@ -933,6 +933,7 @@ try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.sett
   for (const k of ['roundBest', 'masterBest', 'rushBest', 'board']) if (k in S && S[k] != null && !isObj(S[k])) delete S[k];
   for (const k of ['runs', 'effSum', 'greens']) S[k] = num(S[k]);
   for (const k of ['lmAdd', 'lmHide', 'roadAdd', 'objAdd', 'objHide']) if (!Array.isArray(S[k])) S[k] = [];
+  if ('prickBoard' in S && !(isObj(S.prickBoard) && fin(S.prickBoard.pct) && fin(S.prickBoard.secs))) delete S.prickBoard;
   if ('bugQueue' in S) S.bugQueue = Array.isArray(S.bugQueue) ? S.bugQueue.filter(q => isObj(q) && typeof q.p_kind === 'string') : [];
   for (const [k, r] of Object.entries(S.streets)) {
     if (!isObj(r)) { delete S.streets[k]; continue; }
@@ -1088,9 +1089,10 @@ function buildObj(def) {
   const old = OBJ.get(key);
   const o = Object.assign(old || {}, { name: key, edges: ids, nodes, len, cls: 9, obj: true, oname, addr, px, py, exact: !!exact, placed, fixed, def });
   G.streets.set(key, o); OBJ.set(key, o);
-  if (old && G.fromStation) { let mt = Infinity; for (const nd of nodes) mt = Math.min(mt, G.fromStation[nd]); o.t = mt; o.cx = px; o.cy = py; o.dist = Math.hypot(px - SX, py - SY); }
+  if (old && G.fromStation) { let mt = Infinity; for (const nd of nodes) mt = Math.min(mt, G.fromStation[nd]); o.t = mt; o.cx = px; o.cy = py; o.dist = Math.hypot(px - G.stationXY[0], py - G.stationXY[1]); }
 }
-for (const e of store.objAdd) OBJECTS.push([e[0], e[1], '', e[2], e[3], 1]);
+// Egna objekt från Byggläget; ett namn som redan finns i listan hoppas över (annars byggs objektet två gånger)
+for (const e of store.objAdd) if (!OBJECTS.some(d => d[0] === e[0])) OBJECTS.push([e[0], e[1], '', e[2], e[3], 1]);
 for (const def of OBJECTS) buildObj(def);
 
 // Områden och orter att pricka (positioner från OpenStreetMap)
@@ -1199,11 +1201,15 @@ function ortoWanted() { return store.settings.mapStyle !== 'drawn'; }
 function ortoOn() { return ortoWanted() && ORTO.idxState === 1 && !brightOn; }
 function ortoInit() {
   if (ORTO.idxState || !ortoWanted()) return; ORTO.idxState = 3; // hämtar
-  fetch(ORTO.base + 'index.json', { cache: 'force-cache' }).then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).then(j => {
+  fetch(ORTO.base + 'index.json').then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).then(j => {
     const idx = {}; for (const k in j) { const L = j[k]; const bin = atob(L.b); const bits = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bits[i] = bin.charCodeAt(i); idx[k] = { x0: L.x0, y0: L.y0, w: L.w, h: L.h, bits }; }
     ORTO.idx = idx; ORTO.idxState = 1; baseDirty = true; requestDraw(); updAttrib();
   }).catch(() => { ORTO.idxState = 2; baseDirty = true; requestDraw(); updAttrib(); });
 }
+// Misslyckades hämtningen (dåligt nät): försök igen när nätet är tillbaka eller appen visas igen
+function ortoRetry() { if (ORTO.idxState === 2) { ORTO.idxState = 0; ortoInit(); } }
+addEventListener('online', ortoRetry);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) ortoRetry(); });
 function ortoHas(k, tx, ty) { const L = ORTO.idx && ORTO.idx[k]; if (!L) return false; const x = tx - L.x0, y = ty - L.y0; if (x < 0 || y < 0 || x >= L.w || y >= L.h) return false; const i = y * L.w + x; return !!(L.bits[i >> 3] & (1 << (i & 7))); }
 function ortoTile(k, tx, ty) {
   const key = k + '/' + tx + '_' + ty; let t = ORTO.tiles.get(key);
@@ -1213,7 +1219,8 @@ function ortoTile(k, tx, ty) {
     im.src = ORTO.base + key + '.webp'; ORTO.tiles.set(key, t);
     // decode() avkodar bilden i bakgrunden så att första ritningen inte hackar
     const done = () => { if (!t.ok) { t.ok = true; ortoFlush(); } };
-    if (im.decode) im.decode().then(done).catch(() => { if (im.complete && im.naturalWidth) done(); else t.err = true; }); else { im.onload = done; im.onerror = () => { t.err = true; }; }
+    im.onload = done; im.onerror = () => { ORTO.tiles.delete(key); }; // misslyckad ruta tas bort så den hämtas igen nästa gång den behövs
+    if (im.decode) im.decode().then(done).catch(() => { if (im.complete && im.naturalWidth) done(); });
     if (ORTO.tiles.size > ORTO.max) { // släng de rutor som inte använts på längst (men inte de som ritas just nu)
       const old = [...ORTO.tiles.entries()].filter(([, v]) => v.use < ORTO.frame - 1).sort((a, b) => a[1].use - b[1].use).slice(0, 200);
       for (const [kk, v] of old) { v.im.onload = null; v.im.src = ''; ORTO.tiles.delete(kk); }
@@ -1566,7 +1573,7 @@ canvas.addEventListener('pointermove', (ev) => {
     if (st.length === 2) {
       const d0 = Math.hypot(st[0][0] - st[1][0], st[0][1] - st[1][1]) || 1, d1 = Math.hypot(a[0] - b[0], a[1] - b[1]);
       const gv = gesture.view; const sc = clampScale(gv.scale * d1 / d0);
-      if (state.mode === 'drive') { view.scale = sc; if (state.choosing) { state._raManual = true; state._raBase = null; } }
+      if (state.mode === 'drive') { view.scale = sc; state.userZoom = sc; if (state.choosing) { state._raManual = true; state._raBase = null; } }
       else {
         // Zooma runt punkten mellan fingrarna, och låt kartan följa med när fingrarna flyttas
         const c = Math.cos(-gv.rot), s = Math.sin(-gv.rot), ay = H * gv.anchorY;
@@ -1592,7 +1599,7 @@ canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); const f = Math.e
 function clampScale(s) { return Math.max(0.005, Math.min(6, s)); }
 function zoomAt(f, sx, sy) {
   if (state.mode === 'drive' && state.choosing) { state._raManual = true; state._raBase = null; }
-  if (state.mode === 'drive' || sx == null) { view.scale = clampScale(view.scale * f); requestDraw(); return; }
+  if (state.mode === 'drive' || sx == null) { view.scale = clampScale(view.scale * f); if (state.mode === 'drive') state.userZoom = view.scale; requestDraw(); return; }
   const [wx, wy] = s2w(sx, sy); view.scale = clampScale(view.scale * f); const [nx, ny] = s2w(sx, sy); view.cx += wx - nx; view.cy += wy - ny; requestDraw();
 }
 // Mjuk inzoomning mot en punkt på skärmen (används när man trycker på en utzoomad karta).
@@ -1804,7 +1811,7 @@ function rushEnd(why) {
   showSheet(`
     <div class="eyebrow">${name} · slut</div>
     <h1>${r.count} ${r.count === 1 ? 'gata' : 'gator'}${rec ? ' · nytt rekord!' : ''}</h1>
-    <p class="lead">${esc(why)}.${r.kind === 'one' ? ' Du höll i ' + fmtT(secs) + '.' : ''}</p>
+    <p class="lead">${esc(why)}.${r.kind === 'one' ? ' Du höll i ' + fmt(secs) + '.' : ''}</p>
     <div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat"><b>${rec ? (old ? old + ' → ' + r.count : r.count) : (old || '–')}</b><span>personligt bästa</span></div><div class="stat"><b>${r.kind === 'blitz' ? fmt(Math.min(300, secs)) + ' av 5:00' : '♥'.repeat(Math.max(0, r.lives)) || '0 liv'}</b><span>${r.kind === 'blitz' ? 'speltid' : 'liv kvar'}</span></div></div>
     <div id="xpSlot"></div>
     <div class="row" style="margin-top:14px"><button class="secondary" id="menuBtn">Meny</button><button class="primary" id="againBtn" style="margin:0">Spela igen</button></div>
@@ -1832,9 +1839,13 @@ function fsIcon() {
 document.addEventListener('fullscreenchange', () => { const b = document.getElementById('fsBtn'); if (b) { b.innerHTML = fsIcon(); b.title = fsEl() ? 'Lämna fullskärm' : 'Fullskärm'; } });
 document.addEventListener('webkitfullscreenchange', () => { const b = document.getElementById('fsBtn'); if (b) b.innerHTML = fsIcon(); });
 async function sbCall(path, opts) {
-  const r = await fetch(SB.url + '/rest/v1/' + path, Object.assign({ headers: { 'Content-Type': 'application/json', apikey: SB.key, Authorization: 'Bearer ' + SB.key } }, opts));
-  if (!r.ok) throw new Error('http ' + r.status);
-  const t = await r.text(); return t ? JSON.parse(t) : null;
+  // 10 s tak: hänger nätet ska knapparna inte sitta låsta för evigt
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null; const to = setTimeout(() => ctl && ctl.abort(), 10000);
+  try {
+    const r = await fetch(SB.url + '/rest/v1/' + path, Object.assign({ headers: { 'Content-Type': 'application/json', apikey: SB.key, Authorization: 'Bearer ' + SB.key }, signal: ctl ? ctl.signal : undefined }, opts));
+    if (!r.ok) throw new Error('http ' + r.status);
+    const t = await r.text(); return t ? JSON.parse(t) : null;
+  } finally { clearTimeout(to); }
 }
 const sbRpc = (fn, args) => sbCall('rpc/' + fn, { method: 'POST', body: JSON.stringify(args) });
 // Skicka upp lokala rekord (körs efter inloggning och efter nya rekord)
@@ -1849,7 +1860,11 @@ function sbSyncUp() {
   if (B.one) sbSubmit('one', B.one);
   if (store.runs > 0) sbSubmit('drive', Math.round(store.effSum / store.runs), { runs: store.runs });
   if (xpStore().total > 0) sbSubmit('xp', xpStore().total);
+  if (store.prickBoard && store.prickBoard.pct > 0) sbSubmit('prick', store.prickBoard.pct, { secs: store.prickBoard.secs });
 }
+// Rekord som inte kom fram (utan nät) skickas när nätet är tillbaka och vid varje start
+addEventListener('online', () => { if (acct()) sbSyncUp(); });
+setTimeout(() => { if (acct() && navigator.onLine !== false) sbSyncUp(); }, 3000);
 function acctSheet() {
   const a = acct();
   showSheet(`
@@ -2094,22 +2109,24 @@ function friendList() {
     (c.played ? `<button type="button" class="frBtnG chRes" data-id="${esc(c.id)}">Resultat</button>` : ''))).join(''));
   el.innerHTML = chunks.join('');
   const act = (sel, fn) => el.querySelectorAll(sel).forEach(b => b.onclick = () => fn(b.dataset.n || b.dataset.id, b));
-  act('.frYes', (n2) => friendAnswer(n2, true));
-  act('.frNo', (n2) => friendAnswer(n2, false));
-  act('.frDel2', (n2) => friendRemove(n2));
-  act('.frDel', (n2) => { if (confirm('Ta bort ' + n2 + ' som vän?')) friendRemove(n2); });
+  act('.frYes', (n2, b) => friendAnswer(n2, true, b));
+  act('.frNo', (n2, b) => friendAnswer(n2, false, b));
+  act('.frDel2', (n2, b) => friendRemove(n2, b));
+  act('.frDel', (n2, b) => { if (confirm('Ta bort ' + n2 + ' som vän?')) friendRemove(n2, b); });
   act('.frChal', (n2) => chalToFriend(n2));
   act('.chPlay', (id) => chalPlayFromDb(id));
   act('.chRes', (id) => chalShowResult(id));
   const rl = $('#frReload'); if (rl) rl.onclick = () => friendSheet();
 }
-function friendAnswer(nm, yes) {
+function friendAnswer(nm, yes, b) {
+  if (b) { if (b.disabled) return; b.disabled = true; }
   const a = acct(); sbRpc('uh_friend_answer', { p_name: a.name, p_pin: a.pin, p_friend: nm, p_accept: yes })
-    .then((r) => { if (r !== 'OK') toast(r || 'Något gick fel', C.bad); return socialRefresh().then(() => friendList()); }).catch(() => toast('Kunde inte nå servern', C.bad));
+    .then((r) => { if (r !== 'OK') toast(r || 'Något gick fel', C.bad); return socialRefresh().then(() => friendList()); }).catch(() => { if (b) b.disabled = false; toast('Kunde inte nå servern', C.bad); });
 }
-function friendRemove(nm) {
+function friendRemove(nm, b) {
+  if (b) { if (b.disabled) return; b.disabled = true; }
   const a = acct(); sbRpc('uh_friend_remove', { p_name: a.name, p_pin: a.pin, p_friend: nm })
-    .then((r) => { if (r !== 'OK') toast(r || 'Något gick fel', C.bad); return socialRefresh().then(() => friendList()); }).catch(() => toast('Kunde inte nå servern', C.bad));
+    .then((r) => { if (r !== 'OK') toast(r || 'Något gick fel', C.bad); return socialRefresh().then(() => friendList()); }).catch(() => { if (b) b.disabled = false; toast('Kunde inte nå servern', C.bad); });
 }
 function chalVerdict(c) {
   const parsed = chalParse(c.reply || c.code);
@@ -2202,7 +2219,7 @@ function bugQueueFlush() {
   const item = q[0]; bugFlushing = true;
   sbRpc('uh_bug_report', item).then(r => {
     bugFlushing = false;
-    if (r === 'OK' || (typeof r === 'string' && r !== BUG_BUSY)) { const i = (store.bugQueue || []).indexOf(item); if (i >= 0) { store.bugQueue.splice(i, 1); save(); } if (r === 'OK') bugQueueFlush(); }
+    if (r === 'OK' || (typeof r === 'string' && r !== BUG_BUSY)) { const i = (store.bugQueue || []).indexOf(item); if (i >= 0) { store.bugQueue.splice(i, 1); save(); bugQueueFlush(); } }
   }).catch(() => { bugFlushing = false; });
 }
 addEventListener('online', () => bugQueueFlush());
@@ -3051,7 +3068,7 @@ const cDec = (t) => { let v = 0; for (const ch of t) { const i = CA.indexOf(ch);
 const cName = (n) => (n || '').toUpperCase().replace(/[^A-ZÅÄÖ]/g, '').slice(0, 10) || 'ANONYM';
 const cSum = (h) => CA[[...h].reduce((a, c) => a + CA.indexOf(c), 0) % 32];
 const CH_TYPES = { D: { label: 'Utryckning', unit: (n) => n + (n === 1 ? ' adress' : ' adresser') }, O: { label: 'Pricka området', unit: (n) => n + (n === 1 ? ' område' : ' områden') }, R: { label: 'Pricka orten', unit: (n) => n + (n === 1 ? ' ort' : ' orter') } };
-const chKey = (type, i) => type === 'O' ? 'omr:' + OMR_DEFS[i][0] : type === 'R' ? 'ort:' + ORTER_DEFS[i][0] : DATA.n[i];
+const chKey = (type, i) => type === 'O' ? (OMR_DEFS[i] ? 'omr:' + OMR_DEFS[i][0] : null) : type === 'R' ? (ORTER_DEFS[i] ? 'ort:' + ORTER_DEFS[i][0] : null) : DATA.n[i];
 function chalCode(ch) {
   const head = ch.type + cEnc(ch.lvl, 1) + cEnc(ch.loc ? 1 : 0, 1) + cEnc(ch.targets.length, 2) + ch.targets.map(i => cEnc(i, 2)).join('');
   const players = ch.players.map(p => cName(p.name) + '-' + (ch.type === 'D' ? p.r.map(x => cEnc(x.pts, 2) + cEnc(Math.min(1023, Math.round(x.total)), 2)).join('') : cEnc(Math.min(1023, Math.round(p.t || 0)), 2) + p.r.map(x => cEnc(x.pts, 1)).join(''))).join('-');
@@ -3299,7 +3316,7 @@ function revealTarget() {
 function finishLocate(res, color) {
   state.mode = 'locateDone'; state.locResult = res;
   state.showTarget = true; state.targetColor = color;
-  const msg = res === 'g' ? 'Rätt direkt!' : res === 'o' ? 'Rätt på andra' : (state.marks.some(m => m.color !== C.ink) ? 'Rätt på tredje' : (OMR.has(state.target) || ORT.has(state.target) || OBJ.has(state.target)) ? 'Här ligger det' : 'Här ligger den');
+  const msg = res === 'g' ? 'Rätt direkt!' : res === 'o' ? 'Rätt på andra' : (color !== C.purple ? 'Rätt på tredje' : (OMR.has(state.target) || ORT.has(state.target) || OBJ.has(state.target)) ? 'Här ligger det' : 'Här ligger den');
   toast(msg, res === 'g' ? C.good : res === 'o' ? C.warn : res === 'r' && color === C.purple ? C.purple : C.bad);
   if (!state.round) $('#clock').textContent = res === 'g' ? '✓' : res === 'o' ? '2:a' : '✗';
   $('#dontKnow').disabled = true;
@@ -3648,7 +3665,10 @@ function endPrick() {
   const area = store.settings.area; const bestKey = isOrt() ? 'orter' : isOmr() ? 'omr' : (isAuto() ? 'auto_' : '') + area; const prev = store.prickBest[bestKey];
   const isBest = score > 0 && (prev == null || score > prev); if (isBest) { store.prickBest[bestKey] = score; save(); }
   const rb = store.roundBest || (store.roundBest = {}); const pb = rb[bestKey]; const pBest = pct > 0 && (!pb || pct > pb.pct || (pct === pb.pct && secs < pb.secs)); if (pBest) { rb[bestKey] = { pct, secs: Math.round(secs * 10) / 10, total: R.total }; save(); }
-  if (!state.rush && !state.chal && curMode() === 'prick' && area === 'hela' && store.settings.level >= 3 && pct > 0) sbSubmit('prick', pct, { secs: Math.round(secs) });
+  if (!state.rush && !state.chal && curMode() === 'prick' && area === 'hela' && store.settings.level >= 3 && pct > 0) {
+    const pb = store.prickBoard; if (!pb || pct > pb.pct || (pct === pb.pct && Math.round(secs) < pb.secs)) { store.prickBoard = { pct, secs: Math.round(secs) }; save(); }
+    sbSubmit('prick', pct, { secs: Math.round(secs) });
+  }
   const earned = Math.round(score / 2); const pushP = addPoints(earned, bestKey, score);
   const xpR = gainXP([[isOrt() ? 'Pricka orten' : isOmr() ? 'Pricka området' : isAuto() ? 'Pricka automatlarm' : 'Pricka gatan', earned * 2.5 * [1, 1.5, 2][level() - 1]]]); // prick-lägena går fort: en fjärdedel av Utryckningens XP per poäng, så att Utryckning lönar sig mest per minut
   const dotCol = (it) => it.miss ? 'var(--purple)' : it.res === 'g' ? 'var(--good)' : it.res === 'o' ? 'var(--warn)' : 'var(--bad)';
@@ -3717,7 +3737,7 @@ function masterStart(n) {
     const free = c.streets.filter(st => !used.has(st)); if (!free.length) continue;
     const st = free[Math.random() * free.length | 0]; used.add(st); chains.push({ omr: c.omr, street: st, res: [null, null] });
   }
-  state.master = { chains, i: 0, step: 0, n: chains.length, pts: 0, t0: performance.now(), stepT0: 0 };
+  state.master = { chains, i: 0, step: 0, n: chains.length, len: n, pts: 0, t0: performance.now(), stepT0: 0 };
   state.round = { master: true, names: [], dotNames: [...OMR.keys()], items: [], idx: 0, total: chains.length, t0: performance.now(), dots: {} };
   state.trailPath = null; state.optPath = null; state.car = null; state.rush = null; state.chal = null;
   hideSheet(); $('#hud').hidden = false; masterStep();
@@ -3789,8 +3809,8 @@ function masterEnd() {
   const stat = [0, 1].map(k => { const rs = M.chains.map(c => c.res[k]).filter(Boolean); return { pct: rs.length ? Math.round(rs.reduce((a, r) => a + r.pts, 0) / rs.length) : 0, direct: rs.filter(r => r.res === 'g' && !r.miss).length }; });
   const all = M.chains.flatMap(c => c.res).filter(Boolean); const avgT = all.length ? all.reduce((a, r) => a + r.secs, 0) / all.length : 0;
   const basePts = all.reduce((a, r) => a + r.pts, 0); const pct = Math.round(basePts / (n * 200) * 100);
-  const mb = store.masterBest || (store.masterBest = {}); const prev = mb[n]; const isBest = M.pts > 0 && (!prev || M.pts > prev.pts);
-  if (isBest) { mb[n] = { pts: M.pts, pct, secs: Math.round(secs) }; save(); }
+  const mb = store.masterBest || (store.masterBest = {}); const mk = M.len || n; const prev = mb[mk]; const isBest = M.pts > 0 && (!prev || M.pts > prev.pts);
+  if (isBest) { mb[mk] = { pts: M.pts, pct, secs: Math.round(secs) }; save(); }
   const train = stat[0].pct + 5 < stat[1].pct ? 'Träna mer på områdena.' : stat[1].pct + 5 < stat[0].pct ? 'Träna mer på gatorna.' : 'Jämnt mellan områden och gator.';
   const col = pct >= 80 ? 'var(--good)' : pct >= 50 ? 'var(--warn)' : 'var(--bad)';
   const dotCol = (r) => !r ? 'var(--muted)' : r.miss ? 'var(--purple)' : r.res === 'g' ? 'var(--good)' : r.res === 'o' ? 'var(--warn)' : 'var(--bad)';
@@ -3839,7 +3859,7 @@ function startDrive() {
   const n = G.nodes[G.station]; const ex = CORE.exitsFrom(G, G.station, -1); const ut = ex.find(s => s.e === G.utfartEdge) || ex[0];
   state.car = { x: n.x, y: n.y, h: ut ? CORE.stepHeading(G, ut) : 0 };
   state.limit = Infinity; // tidsgränsen fanns bara på Expert (borttagen)
-  state.hintLevel = 0; state.hintCost = 0; state.showCompass = false; state.showNext = false; state.gaveUp = false; state.autoFrom = null; state.autoPath = null;
+  state.hintLevel = 0; state.hintsUsed = 0; state.hintCost = 0; state.showCompass = false; state.showNext = false; state.gaveUp = false; state.autoFrom = null; state.autoPath = null;
   $('#hintActs').hidden = false; $('#locActs').hidden = true; updateHintBtn(); disarmGiveUp();
   $('#phase').textContent = 'körtid'; $('#clock').textContent = '0:00';
   $('#controls').hidden = false; $('#uturn').hidden = false;
@@ -4114,7 +4134,11 @@ const HINTS = [
   { cost: 15, name: 'Nästa sväng', text: 'Rätt val lyser gult i den här korsningen' },
   { cost: 20, name: 'Visa gatan', text: 'Målgatan markeras på kartan' }
 ];
+// En ledtråd som redan är "på" (kompassen och målgatan syns från start på Nybörjare utan Peka ut först) hoppas över gratis
+const hintFree = (i) => (i === 0 && level() === 1 && !state.usedLocate) || (i === 2 && state.showTarget);
+function skipFreeHints() { while (state.hintLevel < HINTS.length && hintFree(state.hintLevel)) state.hintLevel++; }
 function updateHintBtn() {
+  skipFreeHints();
   const b = $('#hintBtn'); const n = state.hintLevel || 0;
   if (n >= HINTS.length) { b.disabled = true; b.innerHTML = 'Inga fler<small>ledtrådar</small>'; return; }
   b.disabled = false; b.innerHTML = `Ledtråd ${n + 1}/3<small>${HINTS[n].name} · +${HINTS[n].cost} s</small>`;
@@ -4122,7 +4146,8 @@ function updateHintBtn() {
 $('#hintBtn').onclick = () => {
   if (state.mode !== 'drive' || state.gaveUp || state.arriving || state.hintLevel >= HINTS.length) return;
   if (performance.now() - (state.hintT || 0) < INPUT_LOCK_MS) return; state.hintT = performance.now(); // ett dubbeltryck ska inte kosta två ledtrådar
-  const h = HINTS[state.hintLevel]; state.hintLevel++; state.penalty += h.cost; state.hintCost += h.cost;
+  skipFreeHints(); if (state.hintLevel >= HINTS.length) { updateHintBtn(); return; }
+  const h = HINTS[state.hintLevel]; state.hintLevel++; state.hintsUsed = (state.hintsUsed || 0) + 1; state.penalty += h.cost; state.hintCost += h.cost;
   if (state.hintLevel === 1) state.showCompass = true;
   if (state.hintLevel === 2) { state.showNext = true; if (state.choosing) renderChoices(); }
   if (state.hintLevel === 3) { state.showTarget = true; state.targetColor = C.amber; }
@@ -4336,8 +4361,10 @@ function showRecall(named) {
       <div class="row"><button class="secondary" id="rUndo">Ångra</button><button class="secondary" id="rDone" style="background:var(--ink);color:var(--sheet);border-color:var(--ink)">Visa facit</button></div>
       <div class="row" style="margin-top:6px"><button class="secondary" id="rMenu">Meny</button><button class="secondary" id="rNext">Hoppa över · nytt larm</button></div>
     `, false, true);
-    $('#rMenu').onclick = () => { state.recall = null; showResult(); menu(); };
-    $('#rNext').onclick = () => { state.recall = null; showResult(); startAlarm(); };
+    // Hoppar man över facit visas inget resultatark; en eventuell nivåhöjning visas som popup ändå
+    const skip = (then) => { state.recall = null; const r = state.xpRes; state.xpRes = null; then(); if (r && r.up) setTimeout(() => levelUpPop(r), 700); };
+    $('#rMenu').onclick = () => skip(menu);
+    $('#rNext').onclick = () => skip(startAlarm);
     sheet.querySelectorAll('.recall button').forEach(b => b.onclick = () => { picked.push(pool[+b.dataset.i]); render(); });
     $('#rUndo').onclick = () => { picked.pop(); render(); };
     $('#rDone').onclick = () => {
@@ -4353,7 +4380,7 @@ function drivePoints() {
   const loc = state.locResult === 'g' ? 3 : state.locResult === 'o' ? 2 : 0;
   if (state.gaveUp) return loc;
   const e = state.eff; let base = e >= 97 ? 10 : e >= 85 ? 7 : e >= 65 ? 4 : 2;
-  base = Math.max(0, base - 2 * (state.hintLevel || 0));
+  base = Math.max(0, base - 2 * (state.hintsUsed || 0));
   return Math.round(base * [1, 1.5, 2, 3][level() - 1] + loc);
 }
 function showResult() {
@@ -4364,7 +4391,7 @@ function showResult() {
   const effCol = eff >= 85 ? 'var(--good)' : eff >= 65 ? 'var(--warn)' : 'var(--bad)';
   const locChip = state.locResult ? `<span class="chip"><span class="dot" style="background:${state.locResult === 'g' ? 'var(--good)' : state.locResult === 'o' ? 'var(--warn)' : 'var(--bad)'}"></span>Utpekning: ${state.locResult === 'g' ? 'rätt direkt' : state.locResult === 'o' ? 'rätt på andra' : 'miss'}</span>` : '';
   const recChip = state.recall ? `<span class="chip">Minne: ${state.recall.ok} av ${state.recall.of} i rätt ordning${state.recall.wrong ? ` · ${state.recall.wrong} fel` : ''}</span>` : '';
-  const hintChip = state.hintLevel ? `<span class="chip"><span class="dot" style="background:var(--amber)"></span>${state.hintLevel} ledtråd${state.hintLevel > 1 ? 'ar' : ''} · +${state.hintCost} s</span>` : '';
+  const hintChip = state.hintsUsed ? `<span class="chip"><span class="dot" style="background:var(--amber)"></span>${state.hintsUsed} ledtråd${state.hintsUsed > 1 ? 'ar' : ''} · +${state.hintCost} s</span>` : '';
   const limitChip = state.limit < Infinity ? `<span class="chip"><span class="dot" style="background:${state.total <= state.limit ? 'var(--good)' : 'var(--bad)'}"></span>Tidsgräns ${fmt(state.limit)}${state.total <= state.limit ? ' klarad' : ' överskriden'}</span>` : '';
   showSheet(`
     <div class="grab"><div class="eyebrow">Framme · ${esc(state.incident)}</div><button class="secondary" id="peekBtn" style="padding:6px 10px">Visa kartan</button></div>
