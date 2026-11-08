@@ -1,16 +1,29 @@
 # Håller Supabase-projektet (gratisnivån) vaket: gratisprojekt pausas efter en veckas inaktivitet.
 # Hämtar topplistan en gång om dagen med den publika nyckeln (samma som spelet använder).
+# Skriver också dagens datum i ping.txt: GitHub stänger annars av schemalagda jobb i repon
+# som inte haft någon aktivitet på 60 dagar, och den lilla ändringen räknas som aktivitet.
 name: Håll topplistan vaken
 on:
   schedule:
-    - cron: '17 4 * * *'   # varje dag 04:17 UTC
-  workflow_dispatch:
+    - cron: '17 4 * * *'   # varje dag 04:17 UTC (05:17 / 06:17 svensk tid)
+  workflow_dispatch:        # kan startas för hand under fliken Actions
+permissions:
+  contents: write
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Hämta topplistan
         run: |
           curl -sS -f "https://wrqgcebhygmomlfedlxl.supabase.co/rest/v1/leaderboard?select=name&limit=1" \
             -H "apikey: sb_publishable_3ZPpXTQgljIU1cdB2NVTPQ_vnJwCCQo" \
             -H "Authorization: Bearer sb_publishable_3ZPpXTQgljIU1cdB2NVTPQ_vnJwCCQo"
+      - name: Notera att det gick
+        run: |
+          date -u +'%Y-%m-%d %H:%M UTC' > ping.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add ping.txt
+          git commit -m 'Topplistan pingad' || exit 0
+          git push
